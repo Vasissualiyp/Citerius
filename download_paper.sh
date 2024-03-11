@@ -6,7 +6,7 @@ source ~/env/venv/bin/activate
 parent_dir="$HOME/research/references"
 csv_file="$parent_dir/papers.csv"
 bibtex_file="$parent_dir/bibliography.bib"
-pdf_dir="$parent_dir/"
+pdf_dir="$parent_dir"
 
 # Function to fetch BibTeX entry
 fetch_bibtex() {
@@ -31,14 +31,28 @@ create_directory() {
 # Function to download the paper
 download_paper() {
     # Add your paper download command here
-    echo "Downloading paper to $pdf_dir/$1"
+	arxiv_num="$1"
+    echo "$arxiv_num"
+	paper_download_loc="$2"
+    echo "$paper_download_loc"
+    download_name="$3"
+    echo "$download_name"
+    echo "Downloading paper to $paper_download_loc"
+	python download_arxiv_paper.py "$arXiv_num" "$paper_download_loc" "$download_name"
 }
 
 # Function to update CSV file
 update_csv() {
-    # Add CSV update logic here
-    echo "$1,$2,$pdf_dir/$2" >> "$csv_file"
+    # Check if CSV file exists, if not, create and add header
+    if [ ! -f "$csv_file" ]; then
+        echo 'Title,Author,ArXiv Number,Year,Location' > "$csv_file"
+    fi
+
+    # Format the input data and append to CSV, ensuring values are enclosed in quotes
+    local formatted_entry="\"$1\",\"$2\",\"$3\",\"$4\",\"$5\""
+    echo "$formatted_entry" >> "$csv_file"
 }
+
 
 # Main script execution
 read -p "Enter the arXiv number: " arxiv_num
@@ -54,14 +68,16 @@ echo "Full Title: $full_title"
 echo "Full Author: $full_author"
 echo "year: $year"
 read -p "Do you want to download this paper? (y/n): " response
+download_name="$label.pdf"
 
 if [[ $response =~ ^[Yy]$ ]]; then
     label=$(create_label "$author" "$title" "$year")
 	echo "$label"
+	paper_specific_dir="$pdf_dir/$label"
     append_bibtex "$bibtex_entry"
-    create_directory "$label"
-    download_paper "$label"
-    update_csv "$title,$author" "$label"
+    mkdir -p "$paper_specific_dir"
+    download_paper "$arxiv_num" "$paper_specific_dir" "$download_name"
+    update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$paper_specific_dir"
     echo "Paper processing completed."
 else
     echo "Download cancelled."
