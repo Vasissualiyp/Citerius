@@ -38,7 +38,8 @@ download_paper() {
     download_name="$3"
     echo "$download_name"
     echo "Downloading paper to $paper_download_loc"
-	python download_arxiv_paper.py "$arXiv_num" "$paper_download_loc" "$download_name"
+	echo "python download_arxiv_paper.py $arxiv_num $paper_download_loc $download_name"
+	python download_arxiv_paper.py "$arxiv_num" "$paper_download_loc" "$download_name"
 }
 
 # Function to update CSV file
@@ -68,15 +69,19 @@ echo "Full Title: $full_title"
 echo "Full Author: $full_author"
 echo "year: $year"
 read -p "Do you want to download this paper? (y/n): " response
-download_name="$label.pdf"
 
 if [[ $response =~ ^[Yy]$ ]]; then
+
     label=$(create_label "$author" "$title" "$year")
 	echo "$label"
+    download_name="$label.pdf"
+
 	paper_specific_dir="$pdf_dir/$label"
     append_bibtex "$bibtex_entry"
+
     mkdir -p "$paper_specific_dir"
     download_paper "$arxiv_num" "$paper_specific_dir" "$download_name"
+
     update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$paper_specific_dir"
     echo "Paper processing completed."
 else
