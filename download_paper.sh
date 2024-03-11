@@ -46,7 +46,7 @@ download_paper() {
 update_csv() {
     # Check if CSV file exists, if not, create and add header
     if [ ! -f "$csv_file" ]; then
-        echo 'Title,Author,ArXiv Number,Year,Location' > "$csv_file"
+        echo 'Title,Author,ArXiv Number,Year,Label' > "$csv_file"
     fi
 
     # Format the input data and append to CSV, ensuring values are enclosed in quotes
