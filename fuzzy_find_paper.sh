@@ -5,6 +5,10 @@ csv_file="$parent_dir/papers.csv"
 bibtex_file="$parent_dir/bibliography.bib"
 pdf_dir="$parent_dir/"
 
+open_pdf() {
+zathura "$1" &
+}
+
 # Function to search and open a paper
 open_paper() {
     local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
@@ -17,7 +21,7 @@ open_paper() {
 
         if [[ -n $pdf_file ]]; then
             echo "Opening $pdf_file" # Replace this with your PDF reader command
-			zathura "$pdf_file"
+			open_pdf "$pdf_file"
         else
             echo "No PDF found in $paper_path."
         fi

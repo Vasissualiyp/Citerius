@@ -87,7 +87,7 @@ if [[ $response =~ ^[Yy]$ ]]; then
     mkdir -p "$paper_specific_dir"
     download_paper "$arxiv_num" "$paper_specific_dir" "$download_name"
 
-    update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$paper_specific_dir"
+    update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$label"
     echo "Paper processing completed."
 else
     echo "Download cancelled."
