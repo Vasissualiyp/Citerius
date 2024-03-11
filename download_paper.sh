@@ -15,7 +15,12 @@ fetch_bibtex() {
 
 # Function to create a short reference label
 create_label() {
-    echo "$1$2$3" 
+    read -p "Enter a label (press Enter for default): " user_label
+	if [ -z "$user_label" ]; then
+      echo "$1$2$3" 
+    else
+      echo "$user_label"
+    fi
 }
 
 # Function to append BibTeX entry to file
