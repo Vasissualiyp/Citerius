@@ -8,6 +8,9 @@ csv_file="$parent_dir/papers.csv"
 bibtex_file="$parent_dir/bibliography.bib"
 pdf_dir="$parent_dir"
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PYTHON_DIR="$SCRIPT_DIR"
+
 # Function to fetch BibTeX entry
 fetch_bibtex() {
     pybibget "$1"
@@ -43,8 +46,7 @@ download_paper() {
     download_name="$3"
     echo "$download_name"
     echo "Downloading paper to $paper_download_loc"
-	echo "python download_arxiv_paper.py $arxiv_num $paper_download_loc $download_name"
-	python download_arxiv_paper.py "$arxiv_num" "$paper_download_loc" "$download_name"
+	python "$PYTHON_DIR/download_arxiv_paper.py" "$arxiv_num" "$paper_download_loc" "$download_name"
 }
 
 # Function to update CSV file
