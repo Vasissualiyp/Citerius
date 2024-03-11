@@ -58,7 +58,6 @@ read -p "Do you want to download this paper? (y/n): " response
 if [[ $response =~ ^[Yy]$ ]]; then
     label=$(create_label "$author" "$title" "$year")
 	echo "$label"
-	exit 0
     append_bibtex "$bibtex_entry"
     create_directory "$label"
     download_paper "$label"
