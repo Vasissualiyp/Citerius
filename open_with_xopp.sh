@@ -4,7 +4,7 @@
 parent_dir="$HOME/research/references"
 csv_file="$parent_dir/papers.csv"
 bibtex_file="$parent_dir/bibliography.bib"
-pdf_dir="$parent_dir"
+pdf_dir="$parent_dir/$1"
 
 # Check if an argument is provided
 if [ "$#" -ne 1 ]; then
@@ -25,10 +25,10 @@ run_inkscape_tablet_daemon() {
 run_inkscape_tablet_daemon
 
 # Extract the filename without the extension
-filename=$(basename -- "$1")
+filename="$1.pdf"
 filename_no_ext="${filename%.pdf}"
 
-cd "$paper_dir"
+cd "$pdf_dir"
 
 # Open the PDF in Xournal++
 xournalpp "$filename" &
@@ -43,6 +43,6 @@ xdotool key "ctrl+s"
 sleep 1
 
 # Type the path to save the file and press Enter
-xopp_file_path="$paper_dir/$filename_no_ext.xopp"
+xopp_file_path="$pdf_dir/$filename_no_ext.xopp"
 xdotool type "$xopp_file_path"
 xdotool key "Return"

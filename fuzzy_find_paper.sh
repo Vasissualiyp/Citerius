@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 # Configuration variables
 parent_dir="$HOME/research/references"
 csv_file="$parent_dir/papers.csv"
 bibtex_file="$parent_dir/bibliography.bib"
-pdf_dir="$parent_dir/"
+pdf_dir="$parent_dir"
 
 open_pdf() {
 zathura "$1" &
