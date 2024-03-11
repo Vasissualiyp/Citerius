@@ -6,8 +6,27 @@ csv_file="$parent_dir/papers.csv"
 bibtex_file="$parent_dir/bibliography.bib"
 pdf_dir="$parent_dir"
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CITERIUS_DIR="$SCRIPT_DIR"
+
 open_pdf() {
-zathura "$1" &
+    echo "Choose the application to open the PDF:"
+    echo "z: Zathura"
+    echo "x: Xournalpp"
+    read -p "Enter your choice (z/x): " choice
+
+    case $choice in
+        z)
+            zathura "$1" &
+            ;;
+        x)
+            label=$(basename "$1" .pdf)
+            "$CITERIUS_DIR/open_with_xopp.sh" "$label"
+            ;;
+        *)
+            echo "Invalid choice. Please enter 'z' or 'x'."
+            ;;
+    esac
 }
 
 # Function to search and open a paper

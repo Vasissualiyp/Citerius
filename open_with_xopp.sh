@@ -22,6 +22,24 @@ run_inkscape_tablet_daemon() {
   fi
 }
 
+create_xopp_from_pdf() {
+  xopp_file_path="$1"
+  filename="$2"
+  xournalpp "$filename" &
+  
+  # Wait for Xournal++ to launch
+  sleep 1
+  
+  # Use xdotool to simulate Ctrl+S to save
+  xdotool key "ctrl+s"
+  
+  # Wait for the save dialog to appear
+  sleep 1
+  
+  # Type the path to save the file and press Enter
+  xdotool type "$xopp_file_path"
+  xdotool key "Return"
+}
 run_inkscape_tablet_daemon
 
 # Extract the filename without the extension
@@ -31,18 +49,9 @@ filename_no_ext="${filename%.pdf}"
 cd "$pdf_dir"
 
 # Open the PDF in Xournal++
-xournalpp "$filename" &
-
-# Wait for Xournal++ to launch
-sleep 1
-
-# Use xdotool to simulate Ctrl+S to save
-xdotool key "ctrl+s"
-
-# Wait for the save dialog to appear
-sleep 1
-
-# Type the path to save the file and press Enter
 xopp_file_path="$pdf_dir/$filename_no_ext.xopp"
-xdotool type "$xopp_file_path"
-xdotool key "Return"
+if [ -f "$xopp_file_path" ]; then
+  xournalpp "$xopp_file_path" &
+else
+  create_xopp_from_pdf "$xopp_file_path" "$filename"
+fi
