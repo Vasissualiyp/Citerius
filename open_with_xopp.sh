@@ -28,13 +28,13 @@ create_xopp_from_pdf() {
   xournalpp "$filename" &
   
   # Wait for Xournal++ to launch
-  sleep 1
+  sleep 0.5
   
   # Use xdotool to simulate Ctrl+S to save
   xdotool key "ctrl+s"
   
   # Wait for the save dialog to appear
-  sleep 1
+  sleep 0.5
   
   # Type the path to save the file and press Enter
   xdotool type "$xopp_file_path"
