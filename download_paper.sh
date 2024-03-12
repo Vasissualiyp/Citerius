@@ -26,6 +26,15 @@ create_label() {
     fi
 }
 
+# Change the titular bibtex reference from arxiv number to the label
+change_bibtex_ref() {
+    bibtex_string="$1"
+    label="$2"
+    arxiv_no="$3"
+
+    # Replace "{arxiv_no" with "{label" in the bibtex entry
+    echo "$bibtex_string" | sed -e "s/{${arxiv_no}/{${label}/"
+}
 # Function to append BibTeX entry to file
 append_bibtex() {
     echo "$1" >> "$bibtex_file"
@@ -84,7 +93,8 @@ if [[ $response =~ ^[Yy]$ ]]; then
     download_name="$label.pdf"
 
 	paper_specific_dir="$pdf_dir/$label"
-    append_bibtex "$bibtex_entry"
+	bibtex_modified_entry=$(change_bibtex_ref "$bibtex_entry" "$label" "$arxiv_num")
+    append_bibtex "$bibtex_modified_entry"
 
     mkdir -p "$paper_specific_dir"
     download_paper "$arxiv_num" "$paper_specific_dir" "$download_name"
