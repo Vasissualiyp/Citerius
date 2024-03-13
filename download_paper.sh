@@ -16,6 +16,43 @@ fetch_bibtex() {
     pybibget "$1"
 }
 
+obtain_bibtex_info() {
+    bibtex_entry="$1"
+    echo "$bibtex_entry"
+    author=$(echo "$bibtex_entry" | grep author | awk '{print $3}' | tr -cd '[:alpha:]') #Get only last name of the 1st author
+    title=$(echo "$bibtex_entry" | grep title | awk '{print $3}' | tr -cd '[:alpha:]') #Get only the 1st title word
+    year=$(echo "$bibtex_entry" | grep year | awk '{print $3}' | tr -cd '[0-9]') #Get only the year
+    full_author=$(echo "$bibtex_entry" | grep author | awk '{ $1=$2=""; sub(/^  */, ""); print }' | tr -cd '[:alpha:] ') #Get only last name of the 1st author
+    full_title=$(echo "$bibtex_entry" | grep title | awk '{ $1=$2=""; sub(/^  */, ""); print }' | tr -cd '[:alpha:] ') #Get only last name of the 1st author
+}
+
+print_bibtex_info() {
+    bibtex_entry="$1"
+	obtain_bibtex_info "$bibtex_entry"
+    echo "Full Title: $full_title"
+    echo "Full Author: $full_author"
+    echo "year: $year"
+}
+
+download_paper_and_source() {
+    bibtex_entry="$1"
+    source_download="$2"
+
+    label=$(create_label "$author" "$title" "$year")
+	echo "$label"
+    download_name="$label.pdf"
+
+	paper_specific_dir="$pdf_dir/$label"
+	bibtex_modified_entry=$(change_bibtex_ref "$bibtex_entry" "$label" "$arxiv_num")
+    append_bibtex "$bibtex_modified_entry"
+
+    mkdir -p "$paper_specific_dir"
+    download_paper "$arxiv_num" "$paper_specific_dir" "$download_name"
+
+    update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$label"
+    echo "Paper processing completed."
+}
+
 # Function to create a short reference label
 create_label() {
     read -p "Enter a label (press Enter for default): " user_label
@@ -72,35 +109,19 @@ update_csv() {
 
 
 # Main script execution
-read -p "Enter the arXiv number: " arxiv_num
-bibtex_entry=$(fetch_bibtex "$arxiv_num")
-echo "$bibtex_entry"
-author=$(echo "$bibtex_entry" | grep author | awk '{print $3}' | tr -cd '[:alpha:]') #Get only last name of the 1st author
-title=$(echo "$bibtex_entry" | grep title | awk '{print $3}' | tr -cd '[:alpha:]') #Get only the 1st title word
-year=$(echo "$bibtex_entry" | grep year | awk '{print $3}' | tr -cd '[0-9]') #Get only the year
-full_author=$(echo "$bibtex_entry" | grep author | awk '{ $1=$2=""; sub(/^  */, ""); print }' | tr -cd '[:alpha:] ') #Get only last name of the 1st author
-full_title=$(echo "$bibtex_entry" | grep title | awk '{ $1=$2=""; sub(/^  */, ""); print }' | tr -cd '[:alpha:] ') #Get only last name of the 1st author
+main() {
+    read -p "Enter the arXiv number: " arxiv_num
+    bibtex_entry=$(fetch_bibtex "$arxiv_num")
+    print_bibtex_info "$bibtex_entry"
+    
+    read -p "Do you want to download this paper? (y/n): " response
+    read -p "Would you like to download the LaTeX source for this paper? (y/N)" source_download
+    
+    if [[ $response =~ ^[Yy]$ ]]; then
+        download_paper_and_source "$bibtex_entry" "$source_download"
+    else
+        echo "Download cancelled."
+    fi
+}
 
-echo "Full Title: $full_title"
-echo "Full Author: $full_author"
-echo "year: $year"
-read -p "Do you want to download this paper? (y/n): " response
-
-if [[ $response =~ ^[Yy]$ ]]; then
-
-    label=$(create_label "$author" "$title" "$year")
-	echo "$label"
-    download_name="$label.pdf"
-
-	paper_specific_dir="$pdf_dir/$label"
-	bibtex_modified_entry=$(change_bibtex_ref "$bibtex_entry" "$label" "$arxiv_num")
-    append_bibtex "$bibtex_modified_entry"
-
-    mkdir -p "$paper_specific_dir"
-    download_paper "$arxiv_num" "$paper_specific_dir" "$download_name"
-
-    update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$label"
-    echo "Paper processing completed."
-else
-    echo "Download cancelled."
-fi
+main
