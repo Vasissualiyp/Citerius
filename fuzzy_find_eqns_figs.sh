@@ -54,7 +54,7 @@ extract_nth_block() {
     done < "$file_path"
 }
 
-get_paper() {
+main() {
     local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
 	echo "$relative_path"
@@ -64,7 +64,7 @@ get_paper() {
         local tex_files=$(find "$paper_src_path" -maxdepth 1 -type f -name '*.tex' | head -n 1)
 		choose_from_multiple_tex_files "$tex_files" # This funciton has defined tex_file
 		
-		nth_block=$(extract_nth_block "equation" 4 "$paper_src_path/$tex_file")
+		nth_block=$(extract_nth_block "equation" 1 "$tex_file")
 
 		echo "$nth_block"
 
@@ -72,3 +72,6 @@ get_paper() {
         echo "No paper selected."
     fi
 }
+
+
+main
