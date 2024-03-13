@@ -47,9 +47,24 @@ download_paper_and_source() {
     append_bibtex "$bibtex_modified_entry"
 
     mkdir -p "$paper_specific_dir"
-    download_paper "$arxiv_num" "$paper_specific_dir" "$download_name"
+    if [ ! -f "$paper_specific_dir/$download_name" ]; then
+        download_paper "$arxiv_num" "$paper_specific_dir" "$download_name" "notsource"
+        update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$label"
+    else
+		read -p "The paper was already downloaded. Overwrite? (y/n): " overwrite
+        if [[ $overwrite =~ ^[Yy]$ ]]; then
+				rm -f "$paper_specific_dir/$download_name"
+				download_paper "$arxiv_num" "$paper_specific_dir" "$download_name" "notsource"
+		fi
+    fi
 
-    update_csv "$full_title" "$full_author" "$arxiv_num" "$year" "$label"
+    if [[ $source_download  =~ ^[Yy]$ ]]; then
+		echo "In the srcdwnload loop"
+		mkdir -p "$paper_specific_dir/src"
+        download_name="$label.tar.gz"
+        download_paper "$arxiv_num" "$paper_specific_dir/src" "$download_name" "source"
+    fi
+
     echo "Paper processing completed."
 }
 
@@ -91,8 +106,9 @@ download_paper() {
     echo "$paper_download_loc"
     download_name="$3"
     echo "$download_name"
+    download_source="$4"
     echo "Downloading paper to $paper_download_loc"
-	python "$PYTHON_DIR/download_arxiv_paper.py" "$arxiv_num" "$paper_download_loc" "$download_name"
+	python "$PYTHON_DIR/download_arxiv_paper.py" "$arxiv_num" "$paper_download_loc" "$download_name" "$download_source"
 }
 
 # Function to update CSV file
@@ -114,8 +130,12 @@ main() {
     bibtex_entry=$(fetch_bibtex "$arxiv_num")
     print_bibtex_info "$bibtex_entry"
     
-    read -p "Do you want to download this paper? (y/n): " response
-    read -p "Would you like to download the LaTeX source for this paper? (y/N)" source_download
+    read -p "Do you want to download this paper? (Y/n): " response
+	if [ -z "$response" ]; then
+		response="y"
+    fi
+
+    read -p "Would you like to download the LaTeX source for this paper? (y/N): " source_download
     
     if [[ $response =~ ^[Yy]$ ]]; then
         download_paper_and_source "$bibtex_entry" "$source_download"
