@@ -38,19 +38,19 @@ extract_nth_block() {
     local output=""
     
     while IFS= read -r line; do
-        if [[ $line == "\\begin{${env_name}}" ]]; then
-            ((count++))
-            if [[ $count -eq $nth ]]; then
-                capture=1
-                output="$line"
-            fi
-        elif [[ $line == "\\end{${env_name}}" && $capture -eq 1 ]]; then
-            output="$output"$'\n'"$line"
-            echo "$output"
-            return
-        elif [[ $capture -eq 1 ]]; then
-            output="$output"$'\n'"$line"
-        fi
+		if [[ $line =~ ^[[:space:]]*\\begin\{${env_name}\}[[:space:]]*$ ]]; then
+		    ((count++))
+		    if [[ $count -eq $nth ]]; then
+		        capture=1
+		        output="$line"
+		    fi
+		elif [[ $line =~ ^[[:space:]]*\\end\{${env_name}\}[[:space:]]*$ && $capture -eq 1 ]]; then
+		    output="$output"$'\n'"$line"
+		    echo "$output"
+		    return
+		elif [[ $capture -eq 1 ]]; then
+		    output="$output"$'\n'"$line"
+		fi
     done < "$file_path"
 }
 
@@ -64,7 +64,7 @@ main() {
         local tex_files=$(find "$paper_src_path" -maxdepth 1 -type f -name '*.tex' | head -n 1)
 		choose_from_multiple_tex_files "$tex_files" # This funciton has defined tex_file
 		
-		nth_block=$(extract_nth_block "equation" 1 "$tex_file")
+		nth_block=$(extract_nth_block "equation" 4 "$tex_file")
 
 		echo "$nth_block"
 
