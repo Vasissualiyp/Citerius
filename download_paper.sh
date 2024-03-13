@@ -63,6 +63,10 @@ download_paper_and_source() {
 		mkdir -p "$paper_specific_dir/src"
         download_name="$label.tar.gz"
         download_paper "$arxiv_num" "$paper_specific_dir/src" "$download_name" "source"
+		cd "$paper_specific_dir/src" 
+		tar -xvf *.gz
+		rm *.gz
+		echo "Untared the source successfully"
     fi
 
     echo "Paper processing completed."
