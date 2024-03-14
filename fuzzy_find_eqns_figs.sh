@@ -75,6 +75,43 @@ extract_environment_with_labels() {
     done < "$file_path"
 }
 
+extract_equation() {
+    extract_environment_with_labels "equation,eqnarray" "$1" "$2"
+}
+
+extract_figure() {
+    extract_environment_with_labels "figure" "$1" "$2"
+}
+
+find_items() {
+    local filename="$1"
+    echo "LEGEND: f for figures, e for equations, followed by the number of item"
+    #echo "Enter the items you want to find (e.g., 'f5 e12' for 5th figure and 12th equation):"
+    read -p "" input_line
+    IFS=' ' read -ra items <<< "$input_line" # Convert the input line into an array of items
+
+    for item in "${items[@]}"; do
+        type=${item:0:1} # Get the first character for the type
+        number=${item:1} # Get the rest of the string as the number
+
+        case $type in
+            f)
+                echo "Extracting figure $number:"
+                extract_figure "$number" "$filename"
+                ;;
+            e)
+                echo "Extracting equation $number:"
+                extract_equation "$number" "$filename"
+                ;;
+            *)
+                echo "Unknown item type: $type"
+                ;;
+        esac
+    done
+}
+
+
+
 main() {
     local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
@@ -85,7 +122,8 @@ main() {
         local tex_files=$(find "$paper_src_path" -maxdepth 1 -type f -name '*.tex' | head -n 1)
 		choose_from_multiple_tex_files "$tex_files" # This funciton has defined tex_file
 		
-		nth_block=$(extract_environment_with_labels "equation,eqnarray" 4 "$tex_file")
+		#nth_block=$(extract_environment_with_labels "equation,eqnarray" 4 "$tex_file")
+		find_items "$tex_file"
 
 		echo "$nth_block"
 
