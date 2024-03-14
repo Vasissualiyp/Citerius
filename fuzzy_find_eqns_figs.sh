@@ -29,6 +29,24 @@ choose_from_multiple_tex_files() {
 	fi
 }
 
+treatment_of_extra_eqns() {
+    if [[ $line =~ \\label ]]; then
+        ((label_count++))
+    fi
+    if [[ $current_env == "eqnarray" ]] && [[ $line =~ \\\\ ]]; then
+        ((extra_count++))
+    fi
+}
+
+counting_extra_eqns() {
+    if [[ $label_count -gt 1 ]]; then
+        ((excess_labels+=label_count-1))
+    fi
+    if [[ $extra_count -gt 0 ]]; then
+        ((excess_extra+=extra_count))
+    fi
+}
+
 extract_environment_with_labels() {
     IFS=',' read -r -a env_names <<< "$1"
     local target_count="$2"
@@ -37,7 +55,9 @@ extract_environment_with_labels() {
     local block_count=0
     local output=""
     local label_count=0
+    local extra_count=0
     local excess_labels=0
+    local excess_extra=0
     local total_env_count=0
     local in_env=false
     local current_env=""
@@ -50,20 +70,17 @@ extract_environment_with_labels() {
                     current_env=$env_name
                     output="$line"
                     label_count=0
+                    extra_count=0
                     break
                 fi
             done
         else
             output="$output"$'\n'"$line"
-            if [[ $line =~ \\label ]]; then
-                ((label_count++))
-            fi
+		    treatment_of_extra_eqns
             if [[ $line =~ ^[[:space:]]*\\end\{${current_env}\}[[:space:]]*$ ]]; then
-                if [[ $label_count -gt 1 ]]; then
-                    ((excess_labels+=label_count-1))
-                fi
+				counting_extra_eqns
                 ((block_count++))
-                total_env_count=$((block_count + excess_labels))
+                total_env_count=$((block_count + excess_labels + excess_extra))
                 if [[ $total_env_count -ge $target_count ]]; then
                     echo "$output"
                     return
