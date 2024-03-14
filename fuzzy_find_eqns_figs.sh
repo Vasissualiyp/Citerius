@@ -125,7 +125,7 @@ extract_figure() {
 find_items() {
     local filename="$1" # Filename of the LaTeX document to process
     echo "LEGEND: f for figures, e for equations, followed by the number of item"
-    read -p "Enter the items you want to find (e.g., 'f5 e12' for 5th figure and 12th equation):" input_line
+    read -p "Enter the items you want to find (e.g., 'f5 e12' for 5th figure and 12th equation): " input_line
     IFS=' ' read -ra items <<< "$input_line" # Convert the input line into an array of items
 
     for item in "${items[@]}"; do
