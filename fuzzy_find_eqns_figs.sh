@@ -30,57 +30,50 @@ choose_from_multiple_tex_files() {
 }
 
 extract_environment_with_labels() {
-    local env_name="$1"
+    IFS=',' read -r -a env_names <<< "$1"
     local target_count="$2"
     local file_path="$3"
     
-    local count=0
-    local excess_label=0
     local block_count=0
-    local in_block=0
     local output=""
     local label_count=0
-
+    local excess_labels=0
+    local total_env_count=0
+    local in_env=false
+    local current_env=""
+    
     while IFS= read -r line; do
-        # Enter environment block
-        if [[ $line =~ ^[[:space:]]*\\begin\{${env_name}\}[[:space:]]*$ ]]; then
-            if [[ $in_block -eq 1 ]]; then
-                # If nested environment, reset but typically should not happen in well-formed LaTeX for equation/figure
-                label_count=0
-            fi
-            in_block=1
-            output="$line"
-            continue
-        fi
-
-        # Exit environment block
-        if [[ $line =~ ^[[:space:]]*\\end\{${env_name}\}[[:space:]]*$ && $in_block -eq 1 ]]; then
+        if [[ "$in_env" == false ]]; then
+            for env_name in "${env_names[@]}"; do
+                if [[ $line =~ ^[[:space:]]*\\begin\{${env_name}\}[[:space:]]*$ ]]; then
+                    in_env=true
+                    current_env=$env_name
+                    output="$line"
+                    label_count=0
+                    break
+                fi
+            done
+        else
             output="$output"$'\n'"$line"
-            in_block=0
-            # Calculate total environments including those implied by excess labels
-            if [ $label_count -gt 1 ]; then
-                ((excess_label+=label_count-1))
+            if [[ $line =~ \\label ]]; then
+                ((label_count++))
             fi
-            ((block_count++))
-            label_count=0
-
-            # Determine if the current count meets the user's criteria
-            if [ $((block_count + excess_label)) -ge $target_count ]; then
-                echo "$output"
-                return
-            else
+            if [[ $line =~ ^[[:space:]]*\\end\{${current_env}\}[[:space:]]*$ ]]; then
+                if [[ $label_count -gt 1 ]]; then
+                    ((excess_labels+=label_count-1))
+                fi
+                ((block_count++))
+                total_env_count=$((block_count + excess_labels))
+                if [[ $total_env_count -ge $target_count ]]; then
+                    echo "$output"
+                    return
+                fi
+                in_env=false
                 output=""
             fi
-        elif [[ $in_block -eq 1 ]]; then
-            # Count labels and accumulate output only within environment blocks
-            [[ $line =~ \\label ]] && ((label_count++))
-            output="$output"$'\n'"$line"
         fi
     done < "$file_path"
 }
-
-# Example usage
-# extract_environment_with_labels "equation" 2 "your_file.tex"
 
 main() {
     local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
@@ -92,7 +85,7 @@ main() {
         local tex_files=$(find "$paper_src_path" -maxdepth 1 -type f -name '*.tex' | head -n 1)
 		choose_from_multiple_tex_files "$tex_files" # This funciton has defined tex_file
 		
-		nth_block=$(extract_environment_with_labels "equation" 4 "$tex_file")
+		nth_block=$(extract_environment_with_labels "equation,eqnarray" 4 "$tex_file")
 
 		echo "$nth_block"
 
