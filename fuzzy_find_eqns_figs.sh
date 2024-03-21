@@ -36,7 +36,7 @@ treatment_of_extra_eqns() {
     if [[ $line =~ \\label ]]; then
         ((label_count++)) # Increment label count if label is found
     fi
-    if [[ $current_env == "eqnarray" ]] && [[ $line =~ \\\\ ]]; then
+    if [[ $current_env == "eqnarray" || $current_env == "align" ]] && [[ $line =~ \\\\ ]]; then
         ((extra_count++)) # Increment extra count if double backslash is found in eqnarray
     fi
 }
@@ -112,7 +112,7 @@ extract_environment_with_labels() {
 # Function to extract equations using a specified list of environment names.
 # It utilizes the extract_environment_with_labels function to find both "equation" and "eqnarray" environments.
 extract_equation() {
-    extract_environment_with_labels "equation,eqnarray" "$1" "$2"
+    extract_environment_with_labels "equation,eqnarray,align" "$1" "$2"
 }
 
 # Function to extract figures using the "figure" environment name.
