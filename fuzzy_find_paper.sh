@@ -8,6 +8,7 @@ pdf_dir="$parent_dir"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CITERIUS_DIR="$SCRIPT_DIR"
+BIN_DIR="$SCRIPT_DIR/bin"
 
 open_pdf() {
     echo "Choose the application to open the PDF:"
@@ -49,9 +50,8 @@ find_line_by_exact_label() {
 
 # Function to search and open a paper
 open_paper() {
-    local label=$(bin/fuzzy_find_script.sh "$parent_dir")
+    local label=$($BIN_DIR/fuzzy_find_script.sh "$parent_dir")
 	local selected_paper=$(find_line_by_exact_label "$label" "$csv_file")
-    #local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
 	echo "$relative_path"
 

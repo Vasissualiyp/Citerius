@@ -9,6 +9,7 @@ pdf_dir="$parent_dir" # Directory where PDFs are stored
 # Determine script directory for relative path operations
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CITERIUS_DIR="$SCRIPT_DIR"
+BIN_DIR="$SCRIPT_DIR/bin"
 
 # Function to handle the selection of a .tex file when multiple are present
 choose_from_multiple_tex_files() {
@@ -29,6 +30,24 @@ choose_from_multiple_tex_files() {
 	        fi
 	    done
 	fi
+}
+
+find_line_by_exact_label() {
+    local label="$1"
+    local csv_file="$2"
+    # Extract the 5th column and find the exact match, then get the line number
+    local line_number=$(awk -F',' '{print $5}' "$csv_file" | grep -nxF "\"$label\"" | cut -d: -f1)
+
+    # Adjust line_number to account for any headers you might have skipped
+    # For example, if you skipped one header line, you should:
+    # line_number=$((line_number + 1))
+
+    if [[ -n $line_number ]]; then
+        # Extract the specific line from the csv file
+        sed "${line_number}q;d" "$csv_file"
+    else
+        echo "Label not found."
+    fi
 }
 
 # Function to handle counting of extra equations in eqnarray environments
@@ -174,7 +193,8 @@ find_items() {
 # The main logic of the script, orchestrating the selection of a paper and extraction of specified items.
 main() {
     # Use fzf to select a paper from the CSV file, ignoring the header line
-    local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
+    local label=$($BIN_DIR/fuzzy_find_script.sh "$parent_dir")
+	local selected_paper=$(find_line_by_exact_label "$label" "$csv_file")
     # Extract the relative path from the selected paper's data
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
     echo "$relative_path"
