@@ -8,8 +8,8 @@ pdf_dir="$parent_dir" # Directory where PDFs are stored
 
 # Determine script directory for relative path operations
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-CITERIUS_DIR="$SCRIPT_DIR"
-BIN_DIR="$SCRIPT_DIR/bin"
+CITERIUS_DIR="$SCRIPT_DIR/.."
+BIN_DIR="$SCRIPT_DIR"
 
 # Function to handle the selection of a .tex file when multiple are present
 choose_from_multiple_tex_files() {
