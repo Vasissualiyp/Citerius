@@ -33,11 +33,31 @@ choose_from_multiple_tex_files() {
 
 # Function to handle counting of extra equations in eqnarray environments
 treatment_of_extra_eqns() {
+    # Check and update matrix environment status
+    if [[ $line =~ \\begin\{array\} ]]; then
+        in_matrix=true
+    elif [[ $line =~ \\end\{array\} ]]; then
+        in_matrix=false
+    fi
+
+    # Process labels as before
     if [[ $line =~ \\label ]]; then
         ((label_count++)) # Increment label count if label is found
     fi
-    if [[ $current_env == "eqnarray" || $current_env == "align" ]] && [[ $line =~ \\\\ ]]; then
-        ((extra_count++)) # Increment extra count if double backslash is found in eqnarray
+
+    # Adjusted condition to increment extra count, excluding when in a matrix environment
+    if [[ ($current_env == "eqnarray" || $current_env == "align") && $line =~ \\\\ && $in_matrix == false ]]; then
+        ((extra_count++)) # Increment extra count if double backslash is found outside of matrix
+    fi
+}
+
+handle_matrix_environment() {
+    # Check for the beginning of a matrix environment
+    if [[ $line =~ \\\begin\{array\} ]]; then
+        in_matrix=true
+    # Check for the end of a matrix environment
+    elif [[ $line =~ \\\end\{array\} ]]; then
+        in_matrix=false
     fi
 }
 
@@ -68,6 +88,7 @@ extract_environment_with_labels() {
     local total_env_count=0
     local in_env=false
     local current_env=""
+    local in_matrix=false
     
     # Read file line by line
     while IFS= read -r line; do
@@ -79,6 +100,8 @@ extract_environment_with_labels() {
                     in_env=true
                     current_env=$env_name
                     output="$line"
+					output="$output"$'\n'"$line"
+				    handle_matrix_environment
                     label_count=0
                     extra_count=0
                     break # Exit loop on first match
