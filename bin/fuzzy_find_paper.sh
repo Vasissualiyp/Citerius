@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Configuration variables
-parent_dir="$HOME/research/references"
+parent_dir="$1"
+label="$2"
 csv_file="$parent_dir/papers.csv"
 bibtex_file="$parent_dir/bibliography.bib"
 pdf_dir="$parent_dir"
@@ -50,7 +51,6 @@ find_line_by_exact_label() {
 
 # Function to search and open a paper
 open_paper() {
-    local label=$($BIN_DIR/fuzzy_find_script.sh "$parent_dir")
 	local selected_paper=$(find_line_by_exact_label "$label" "$csv_file")
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
 	echo "$relative_path"

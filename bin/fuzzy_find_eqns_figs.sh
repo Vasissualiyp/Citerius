@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+parent_dir="$1" # Directory containing reference materials
+label="$2"
+
 # Configuration variables for paths
-parent_dir="$HOME/research/references" # Directory containing reference materials
 csv_file="$parent_dir/papers.csv" # CSV file with metadata for papers
 bibtex_file="$parent_dir/bibliography.bib" # BibTeX file with bibliography information
 pdf_dir="$parent_dir" # Directory where PDFs are stored
@@ -193,7 +195,6 @@ find_items() {
 # The main logic of the script, orchestrating the selection of a paper and extraction of specified items.
 main() {
     # Use fzf to select a paper from the CSV file, ignoring the header line
-    local label=$($BIN_DIR/fuzzy_find_script.sh "$parent_dir")
 	local selected_paper=$(find_line_by_exact_label "$label" "$csv_file")
     # Extract the relative path from the selected paper's data
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
