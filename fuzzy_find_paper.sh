@@ -29,9 +29,29 @@ open_pdf() {
     esac
 }
 
+find_line_by_exact_label() {
+    local label="$1"
+    local csv_file="$2"
+    # Extract the 5th column and find the exact match, then get the line number
+    local line_number=$(awk -F',' '{print $5}' "$csv_file" | grep -nxF "\"$label\"" | cut -d: -f1)
+
+    # Adjust line_number to account for any headers you might have skipped
+    # For example, if you skipped one header line, you should:
+    # line_number=$((line_number + 1))
+
+    if [[ -n $line_number ]]; then
+        # Extract the specific line from the csv file
+        sed "${line_number}q;d" "$csv_file"
+    else
+        echo "Label not found."
+    fi
+}
+
 # Function to search and open a paper
 open_paper() {
-    local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
+    local label=$(bin/fuzzy_find_script.sh "$parent_dir")
+	local selected_paper=$(find_line_by_exact_label "$label" "$csv_file")
+    #local selected_paper=$(cat "$csv_file" | sed '1d' | fzf --delimiter=',' --with-nth=1,2,3,4,5)
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
 	echo "$relative_path"
 
