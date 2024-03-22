@@ -2,6 +2,7 @@
 
 parent_dir="$1" # Directory containing reference materials
 label="$2"
+input_line="$3"
 
 # Configuration variables for paths
 csv_file="$parent_dir/papers.csv" # CSV file with metadata for papers
@@ -142,6 +143,7 @@ extract_environment_with_labels() {
                 total_env_count=$((block_count + excess_labels + excess_extra))
                 # Check if target count has been reached
                 if [[ $total_env_count -ge $target_count ]]; then
+				    output=$(echo "$output" | sed '1d')
                     echo "$output"
                     return
                 fi
@@ -168,8 +170,6 @@ extract_figure() {
 # Main function to parse user input for items to find, then extract and print those items from the document.
 find_items() {
     local filename="$1" # Filename of the LaTeX document to process
-    echo "LEGEND: f for figures, e for equations, followed by the number of item"
-    read -p "Enter the items you want to find (e.g., 'f5 e12' for 5th figure and 12th equation): " input_line
     IFS=' ' read -ra items <<< "$input_line" # Convert the input line into an array of items
 
     for item in "${items[@]}"; do
@@ -178,11 +178,11 @@ find_items() {
 
         case $type in
             f)
-                echo "Extracting figure $number:" # Notify user about the figure being extracted
+                #echo "Extracting figure $number:" # Notify user about the figure being extracted
                 extract_figure "$number" "$filename" # Call extract_figure function with the number and filename
                 ;;
             e)
-                echo "Extracting equation $number:" # Notify user about the equation being extracted
+                #echo "Extracting equation $number:" # Notify user about the equation being extracted
                 extract_equation "$number" "$filename" # Call extract_equation function with the number and filename
                 ;;
             *)
@@ -198,7 +198,7 @@ main() {
 	local selected_paper=$(find_line_by_exact_label "$label" "$csv_file")
     # Extract the relative path from the selected paper's data
     local relative_path=$(echo $selected_paper | cut -d ',' -f 5 | sed 's/"//g')
-    echo "$relative_path"
+    #echo "$relative_path"
 
     # Proceed if a paper has been selected
     if [[ -n $selected_paper ]]; then
