@@ -181,6 +181,20 @@ extract_environment_with_labels() {
     done < "$file_path"
 }
 
+update_figure_path() {
+    local parent_dir="$1"
+    local label="$2"
+    local environment_string="$3"
+    
+    # Define the regex pattern for matching common image file formats within a command
+    local file_pattern='(\{)(.*\/)?([^\/]+\.(pdf|png|jpg|jpeg))(\})'
+    
+    # Replace the path in the environment string using | as a delimiter to avoid conflicts with file paths
+    updated_environment_string=$(echo "$environment_string" | sed -E "s@$file_pattern@\1$parent_dir/$label/src/\3\5@g")
+    
+    echo "$updated_environment_string"
+}
+
 # Function to extract equations using a specified list of environment names.
 # It utilizes the extract_environment_with_labels function to find both "equation" and "eqnarray" environments.
 extract_equation() {
@@ -190,7 +204,9 @@ extract_equation() {
 # Function to extract figures using the "figure" environment name.
 # It calls the extract_environment_with_labels function to specifically find "figure" environments.
 extract_figure() {
-    extract_environment_with_labels "figure" "$1" "$2"
+    figure_env=$(extract_environment_with_labels "figure" "$1" "$2")
+	updated_figure_env=$(update_figure_path "$parent_dir" "$label" "$figure_env")
+	echo "$updated_figure_env"
 }
 
 # Main function to parse user input for items to find, then extract and print those items from the document.
