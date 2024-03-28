@@ -5,6 +5,8 @@ source ~/env/venv/bin/activate
 parent_dir="$1"
 bibtex_entry="$2"
 source_download="$3"
+label="$4"
+arxiv_num="$5"
 
 # Configuration
 csv_file="$parent_dir/papers.csv"
@@ -14,6 +16,16 @@ pdf_dir="$parent_dir"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PYTHON_DIR="$SCRIPT_DIR"
 BIN_DIR="$SCRIPT_DIR"
+
+obtain_bibtex_info() {
+    bibtex_entry="$1"
+    echo "$bibtex_entry"
+    author=$(echo "$bibtex_entry" | grep author | awk '{print $3}' | tr -cd '[:alpha:]') #Get only last name of the 1st author
+    title=$(echo "$bibtex_entry" | grep title | awk '{print $3}' | tr -cd '[:alpha:]') #Get only the 1st title word
+    year=$(echo "$bibtex_entry" | grep year | awk '{print $3}' | tr -cd '[0-9]') #Get only the year
+    full_author=$(echo "$bibtex_entry" | grep author | awk '{ $1=$2=""; sub(/^  */, ""); print }' | tr -cd '[:alpha:] ') #Get only last name of the 1st author
+    full_title=$(echo "$bibtex_entry" | grep title | awk '{ $1=$2=""; sub(/^  */, ""); print }' | tr -cd '[:alpha:] ') #Get only last name of the 1st author
+}
 
 download_paper_and_source() {
     bibtex_entry="$1"
@@ -100,6 +112,7 @@ update_csv() {
 
 # Main script execution
 main() {
+    obtain_bibtex_info "$bibtex_entry"
     download_paper_and_source "$bibtex_entry" "$source_download"
 }
 

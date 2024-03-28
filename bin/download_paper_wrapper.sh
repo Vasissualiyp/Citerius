@@ -58,7 +58,7 @@ main() {
     label=$(create_label "$author" "$title" "$year")
     
     if [[ $response =~ ^[Yy]$ ]]; then
-        "$BIN_DIR/download_paper.sh" "$parent_dir" "$bibtex_entry" "$source_download"
+        "$BIN_DIR/download_paper.sh" "$parent_dir" "$bibtex_entry" "$source_download" "$label" "$arxiv_num"
     else
         echo "Download cancelled."
     fi
