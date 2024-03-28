@@ -119,7 +119,6 @@ extract_environment_with_labels() {
     local in_matrix=false
 	local in_starred_env=false
     local starred_env_has_label=false
-	echo "Set everything up"
     
     # Read file line by line
     while IFS= read -r line; do
@@ -137,11 +136,7 @@ extract_environment_with_labels() {
 				    else
 				        current_env_full="$current_env"
 				    fi
-				    # Debug print to verify the pattern
-				    echo "Start Pattern: $current_env_full"
 				    end_env_pattern="^[[:space:]]*\\\\end\\{${current_env_full}\\}[[:space:]]*$"
-				    # Debug print to verify the end pattern
-				    echo "End Pattern: $end_env_pattern"
 				    # TREATMENT OF STARRED EQNS ENDS
 
 				    in_env=true
@@ -165,7 +160,6 @@ extract_environment_with_labels() {
             # Check if line marks the end of the current environment
 		    
 		    if [[ $line =~ $end_env_pattern ]]; then
-				echo "Exit env $env_name"
 				# Update counters based on labels and extra equations
 				if [[ $in_starred_env == false || ($in_starred_env == true && $starred_env_has_label == true) ]]; then
    				    counting_extra_eqns
@@ -182,7 +176,6 @@ extract_environment_with_labels() {
                 # Reset state for next environment
                 in_env=false
                 output=""
-				echo "Exited env $env_name"
             fi
         fi
     done < "$file_path"
@@ -191,14 +184,12 @@ extract_environment_with_labels() {
 # Function to extract equations using a specified list of environment names.
 # It utilizes the extract_environment_with_labels function to find both "equation" and "eqnarray" environments.
 extract_equation() {
-    echo "Extracting eqn $1 $2"
     extract_environment_with_labels "equation,eqnarray,align" "$1" "$2"
 }
 
 # Function to extract figures using the "figure" environment name.
 # It calls the extract_environment_with_labels function to specifically find "figure" environments.
 extract_figure() {
-    echo "Extracting fig $1 $2"
     extract_environment_with_labels "figure" "$1" "$2"
 }
 
