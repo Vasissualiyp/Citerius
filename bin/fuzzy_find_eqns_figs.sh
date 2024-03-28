@@ -62,6 +62,11 @@ treatment_of_extra_eqns() {
         in_matrix=false
     fi
 
+	# Set starred_env_has_label=true if a label is found within a starred environment
+    if [[ $in_starred_env == true && $line =~ \\label ]]; then
+        starred_env_has_label=true
+    fi
+
     # Process labels as before
     if [[ $line =~ \\label ]]; then
         ((label_count++)) # Increment label count if label is found
@@ -111,6 +116,9 @@ extract_environment_with_labels() {
     local in_env=false
     local current_env=""
     local in_matrix=false
+	local in_starred_env=false
+    local starred_env_has_label=false
+	echo "Set everything up"
     
     # Read file line by line
     while IFS= read -r line; do
@@ -118,16 +126,20 @@ extract_environment_with_labels() {
             # Loop through each specified environment name
             for env_name in "${env_names[@]}"; do
                 # Check if line marks the beginning of an environment
-                if [[ $line =~ ^[[:space:]]*\\begin\{${env_name}\}[[:space:]]*$ ]]; then
-                    in_env=true
-                    current_env=$env_name
-                    output="$line"
-					output="$output"$'\n'"$line"
-				    handle_matrix_environment
-                    label_count=0
-                    extra_count=0
-                    break # Exit loop on first match
-                fi
+				if [[ $line =~ ^[[:space:]]*\\begin\{(${env_name})\*?\}[[:space:]]*$ ]]; then
+				    in_env=true
+				    current_env=${BASH_REMATCH[1]}  # Correctly capture the environment name
+				    output="$line"
+				    label_count=0
+				    extra_count=0
+				    # Additional logic for starred environments
+				    if [[ $line =~ \* ]]; then
+				        in_starred_env=true
+				    else
+				        in_starred_env=false
+				    fi
+				    break
+				fi
             done
         else
             # Append current line to output
@@ -136,9 +148,12 @@ extract_environment_with_labels() {
             treatment_of_extra_eqns
             # Check if line marks the end of the current environment
             if [[ $line =~ ^[[:space:]]*\\end\{${current_env}\}[[:space:]]*$ ]]; then
+				echo "Exit env $env_name"
 				# Update counters based on labels and extra equations
-                counting_extra_eqns
-                ((block_count++))
+				if [[ $in_starred_env == false || ($in_starred_env == true && $starred_env_has_label == true) ]]; then
+   				    counting_extra_eqns
+   				    ((block_count++))
+   				fi
                 # Calculate total environment count including excesses
                 total_env_count=$((block_count + excess_labels + excess_extra))
                 # Check if target count has been reached
@@ -150,6 +165,7 @@ extract_environment_with_labels() {
                 # Reset state for next environment
                 in_env=false
                 output=""
+				echo "Exited env $env_name"
             fi
         fi
     done < "$file_path"
@@ -158,12 +174,14 @@ extract_environment_with_labels() {
 # Function to extract equations using a specified list of environment names.
 # It utilizes the extract_environment_with_labels function to find both "equation" and "eqnarray" environments.
 extract_equation() {
+    echo "Extracting eqn $1 $2"
     extract_environment_with_labels "equation,eqnarray,align" "$1" "$2"
 }
 
 # Function to extract figures using the "figure" environment name.
 # It calls the extract_environment_with_labels function to specifically find "figure" environments.
 extract_figure() {
+    echo "Extracting fig $1 $2"
     extract_environment_with_labels "figure" "$1" "$2"
 }
 
@@ -210,11 +228,6 @@ main() {
         
         # Call find_items to process user input and extract requested items from the chosen .tex file
         find_items "$tex_file"
-
-        # Uncommented nth_block variable assignment was likely meant for debugging or specific extraction purposes
-        # nth_block=$(extract_environment_with_labels "equation,eqnarray" 4 "$tex_file")
-        # echo "$nth_block"
-
     else
         echo "No paper selected." # Inform user if no paper was selected
     fi
