@@ -17,6 +17,11 @@ open_pdf() {
     echo "x: Xournalpp"
     read -p "Enter your choice (z/x): " choice
 
+	# Set default choice to 'z' if no input is provided
+    if [[ -z "$choice" ]]; then
+        choice='z'
+    fi
+
     case $choice in
         z)
             zathura "$1" &
