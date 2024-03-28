@@ -108,6 +108,7 @@ extract_environment_with_labels() {
     # Initialize counters and state variables
     local block_count=0
     local output=""
+    local end_env_pattern="TEEEEEEEEEST"
     local label_count=0
     local extra_count=0
     local excess_labels=0
@@ -126,9 +127,24 @@ extract_environment_with_labels() {
             # Loop through each specified environment name
             for env_name in "${env_names[@]}"; do
                 # Check if line marks the beginning of an environment
-				if [[ $line =~ ^[[:space:]]*\\begin\{(${env_name})\*?\}[[:space:]]*$ ]]; then
+				if [[ $line =~ ^[[:space:]]*\\begin\{(${env_name})(\*?)\}[[:space:]]*$ ]]; then
+						
+				    # TREATMENT OF STARRED EQNS BEGINS
+				    current_env=${BASH_REMATCH[1]}  # Capture the environment name
+				    current_env_starred=${BASH_REMATCH[2]}
+				    if [[ $current_env_starred == "*" ]]; then
+				        current_env_full="${current_env}\\*"  # Escape the asterisk for regex use
+				    else
+				        current_env_full="$current_env"
+				    fi
+				    # Debug print to verify the pattern
+				    echo "Start Pattern: $current_env_full"
+				    end_env_pattern="^[[:space:]]*\\\\end\\{${current_env_full}\\}[[:space:]]*$"
+				    # Debug print to verify the end pattern
+				    echo "End Pattern: $end_env_pattern"
+				    # TREATMENT OF STARRED EQNS ENDS
+
 				    in_env=true
-				    current_env=${BASH_REMATCH[1]}  # Correctly capture the environment name
 				    output="$line"
 				    label_count=0
 				    extra_count=0
@@ -147,7 +163,8 @@ extract_environment_with_labels() {
 		    # Perform additional processing for labels and extra equations
             treatment_of_extra_eqns
             # Check if line marks the end of the current environment
-            if [[ $line =~ ^[[:space:]]*\\end\{${current_env}\}[[:space:]]*$ ]]; then
+		    
+		    if [[ $line =~ $end_env_pattern ]]; then
 				echo "Exit env $env_name"
 				# Update counters based on labels and extra equations
 				if [[ $in_starred_env == false || ($in_starred_env == true && $starred_env_has_label == true) ]]; then

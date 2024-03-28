@@ -16,8 +16,8 @@ main_wrapper() {
     read -p "Enter the items you want to find (e.g., 'f5 e12' for 5th figure and 12th equation): " input_line
 	
 	# For testing
-	#label="MUSIC"
-	#input_line="f2"
+	#label="MFM"
+	#input_line="f30"
 	
 	$BIN_DIR/fuzzy_find_eqns_figs.sh "$parent_dir" "$label" "$input_line"
 }
