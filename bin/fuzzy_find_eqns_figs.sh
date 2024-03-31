@@ -169,7 +169,7 @@ extract_environment_with_labels() {
                 total_env_count=$((block_count + excess_labels + excess_extra))
                 # Check if target count has been reached
                 if [[ $total_env_count -ge $target_count ]]; then
-				    output=$(echo "$output" | sed '1d')
+				    output=$(echo "$output")
                     echo "$output"
                     return
                 fi
