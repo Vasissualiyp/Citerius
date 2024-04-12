@@ -126,7 +126,8 @@ extract_environment_with_labels() {
             # Loop through each specified environment name
             for env_name in "${env_names[@]}"; do
                 # Check if line marks the beginning of an environment
-				if [[ $line =~ ^[[:space:]]*\\begin\{(${env_name})(\*?)\}[[:space:]]*$ ]]; then
+				#if [[ $line =~ ^[[:space:]]*\\begin\{(${env_name})(\*?)\}[[:space:]]*$ ]]; then
+				if [[ $line =~ ^[[:space:]]*\\begin\{(${env_name})(\*?)\}[[:space:]]*.*$ ]]; then #Now can detect stuff like \begin{figure}[t]
 						
 				    # TREATMENT OF STARRED EQNS BEGINS
 				    current_env=${BASH_REMATCH[1]}  # Capture the environment name
