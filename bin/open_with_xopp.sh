@@ -25,7 +25,7 @@ run_inkscape_tablet_daemon() {
 create_xopp_from_pdf() {
   xopp_file_path="$1"
   filename="$2"
-  xournalpp "$filename" &
+  xournalpp "$filename" > /dev/null &
   
   # Wait for Xournal++ to launch
   sleep 0.5
@@ -51,7 +51,7 @@ cd "$pdf_dir"
 # Open the PDF in Xournal++
 xopp_file_path="$pdf_dir/$filename_no_ext.xopp"
 if [ -f "$xopp_file_path" ]; then
-  xournalpp "$xopp_file_path" &
+  xournalpp "$xopp_file_path" > /dev/null &
 else
   create_xopp_from_pdf "$xopp_file_path" "$filename"
 fi
