@@ -87,11 +87,8 @@ create_directory() {
 download_paper() {
     # Add your paper download command here
 	arxiv_num="$1"
-    echo "$arxiv_num"
 	paper_download_loc="$2"
-    echo "$paper_download_loc"
     download_name="$3"
-    echo "$download_name"
     download_source="$4"
     echo "Downloading paper to $paper_download_loc"
 	python "$PYTHON_DIR/download_arxiv_paper.py" "$arxiv_num" "$paper_download_loc" "$download_name" "$download_source"

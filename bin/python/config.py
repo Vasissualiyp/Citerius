@@ -8,23 +8,30 @@ class CiteriusConfig():
         """
         Citerius config class. 
         Args:
-            ref_dir (str) - path to directory with references
+            ref_dir (str): path to directory with references
         """
         # Set up paths
         self.parent_dir = ref_dir
         self.csv_file = os.path.join(ref_dir, 'papers.csv')
         self.bibtex_file = os.path.join(ref_dir, 'bibliography.bib')
+        self.df_loaded = False
 
-        # Create pandas dataframe
+    def load_df(self):
+        """
+        Loads dataframe of all the papers. 
+        Required to do anything with it.
+        """
         self.df = pd.read_csv(self.csv_file)
         self.df_columns = self.df.columns.tolist()
-        self.label_column_idx = self.df_columns.index("Label")
+        self.df_loaded = True
 
     def fuzzy_find_label(self):
         """
         Performs fuzzy find over the database of all the papers,
         and returns the label of the requested paper
         """
+        if not self.df_loaded:
+            self.load_df()
         list_of_lines = []
         for i in range(len(self.df)):
             line = ""
