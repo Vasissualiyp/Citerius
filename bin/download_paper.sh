@@ -14,7 +14,7 @@ bibtex_file="$parent_dir/bibliography.bib"
 pdf_dir="$parent_dir"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PYTHON_DIR="$SCRIPT_DIR"
+PYTHON_DIR="$SCRIPT_DIR/python"
 BIN_DIR="$SCRIPT_DIR"
 
 obtain_bibtex_info() {
