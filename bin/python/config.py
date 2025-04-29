@@ -1,6 +1,7 @@
 import pandas as pd
 from pyfzf import FzfPrompt
 import os
+import sys
 
 class CiteriusConfig():
     def __init__(self, ref_dir: str):
@@ -33,14 +34,17 @@ class CiteriusConfig():
             list_of_lines.append(line)
 
         fzf = FzfPrompt()
-        chosen_line = fzf.prompt(list_of_lines)[0]
-        line_idx = list_of_lines.index(chosen_line)
+        chosen_line = fzf.prompt(list_of_lines)
+        if len(chosen_line) == 0:
+            raise ValueError(f"Could not find pape")
+        line_idx = list_of_lines.index(chosen_line[0])
 
         label = self.df['Label'][line_idx]
         return label
 
 if __name__ == "__main__":
-    ref_dir = "/home/vasilii/research/references"
+    ref_dir = sys.argv[1]
+    #ref_dir = "/home/vasilii/research/references"
     citerius = CiteriusConfig(ref_dir)
     label = citerius.fuzzy_find_label()
-    print(f"Line label: {label}")
+    print(label)
