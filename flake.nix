@@ -21,7 +21,8 @@
           matplotlib
           numpy
           pyfzf
-		  arxiv
+          arxiv
+          pybtex
         ]);
       in
       {
