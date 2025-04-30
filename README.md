@@ -2,6 +2,7 @@ In order to make script work, in ~/env/venv python environment the following pac
 * pybibget
 * arxiv
 * pyfzf
+* pybtex
 * ads (not yet implemented, should scrape NASA database)
 
 ### Todo:
