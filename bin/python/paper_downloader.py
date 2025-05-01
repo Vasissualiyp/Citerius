@@ -186,7 +186,7 @@ class PaperDownloader():
         csv_file.close()
     
         bib_file = open(self.citerius.bibtex_file, "a")
-        bib_file.write(self.citation_str)
+        bib_file.write("\n")
         bib_file.write(self.citation_str)
         bib_file.close()
         
