@@ -179,7 +179,7 @@ class PaperDownloader():
         as well as this paper's string to csv file
         """
     
-        csv_str = f"\"{self.full_title}\", \"{self.full_authors}\", \"{self.arxiv_id}\", \"{self.year}\", \"{self.label}\""
+        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\""
     
         csv_file = open(self.citerius.csv_file, "a")
         csv_file.write(csv_str)
@@ -196,4 +196,4 @@ if __name__ == "__main__":
     ref_dir = "/home/vasilii/research/references"
     arxiv_id = input("Arxiv paper id: ")
     paper_download = PaperDownloader(ref_dir, arxiv_id)
-    paper_download,download_paper_with_user_input()
+    paper_download.download_paper_with_user_input()

@@ -43,7 +43,8 @@ class CiteriusConfig():
         fzf = FzfPrompt()
         chosen_line = fzf.prompt(list_of_lines)
         if len(chosen_line) == 0:
-            raise ValueError(f"Could not find pape")
+            print("Fuzzy find failed - no papers found.")
+            exit(0)
         line_idx = list_of_lines.index(chosen_line[0])
 
         label = self.df['Label'][line_idx]
