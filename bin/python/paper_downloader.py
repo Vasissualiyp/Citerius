@@ -1,9 +1,11 @@
 import pybibget as pbg
 import pybtex as pbt
 from config import CiteriusConfig
+from pathlib import Path
 import os
 import sys
 import asyncio
+import arxiv
 
 def get_citation_from_arxiv_id(arxiv_addr):
     """
@@ -39,20 +41,47 @@ class PaperDownloader():
         self.citation_str = self.citation_str.replace(arxiv_id, self.label, 1)
         
         # Prepare file-name variables for downloading of the paper/its source
-        download_dir = os.path.join(self.citerius.parent_dir, self.label)
-        download_name = self.label + '.pdf'
-        download_path = os.path.join(download_dir, download_name)
-        download_src_dir = os.path.join(download_dir, "src")
-        download_src_path = os.path.join(download_src_dir, self.label + ".tar.gz")
+        self.download_dir = os.path.join(self.citerius.parent_dir, self.label)
+        self.download_name = self.label + '.pdf'
+        self.download_path = os.path.join(self.download_dir, self.download_name)
+        self.download_src_dir = os.path.join(self.download_dir, "src")
+        self.download_src_path = os.path.join(self.download_src_dir, self.label + ".tar.gz")
         
         try:
-            os.mkdir(download_dir)
+            os.mkdir(self.download_dir)
             self.append_bibtex()
         except:
-            overwrite = input(f"There is already a paper with the same label. Overwrite? (y/N)")
-            raise NotImplementedError("Overwriting isn't implemented yet")
+            print(f"There is already a paper with the label {self.label}")
+            #raise NotImplementedError("Overwriting isn't implemented yet")
+
+        if Path(self.download_path).exists() and self.download_ans == 'y':
+            overwrite = self.input_with_default(f"The pdf of paper with label {self.label} was already downloaded. Overwrite? (y/N)", 'n')
         
         print(self.citation_str)
+
+    def input_with_default(self, prompt: str, default: str):
+        """
+        Calls for user input. If no answer provided, will default to given value
+
+        Args:
+            prompt (str): prompt for input
+            default (str): default value for input
+
+        Returns:
+            str: user-provided input
+        """
+        num_attempts = 5
+        valid_inputs = [ 'y', 'n' ]
+        while num_attempts > 0:
+            usr_input = input(prompt)
+            if usr_input == "":
+                usr_input = default
+            if usr_input.lower() in valid_inputs:
+                return usr_input.lower()
+            else:
+                print(f"Invalid user input: {usr_input}. Allowed values: {valid_inputs}. Please, try again.")
+                num_attempts -= 1
+        raise TimeoutError("Too many wrong attempts")
 
     def get_paper_info(self):
         """
@@ -60,10 +89,10 @@ class PaperDownloader():
         """
     
         concat_string = " and " 
-        citation_str = get_citation_from_arxiv_id(arxiv_id)
+        citation_str = get_citation_from_arxiv_id(self.arxiv_id)
         
         # Extract bibliography data from citation string
-        bibdata = pbt.database.parse_string(citation_str, "bibtex").entries[arxiv_id]
+        bibdata = pbt.database.parse_string(citation_str, "bibtex").entries[self.arxiv_id]
         
         full_title = bibdata.fields['title']
         year = bibdata.fields['year']
@@ -87,6 +116,22 @@ class PaperDownloader():
         self.year = year
         self.default_label = default_label
 
+    def download_paper(self, source_download):
+        """
+        Downloads paper or its source from arxiv
+    
+        Args:
+            source_download(str): whether to download src of the paper or just the pdf
+        """
+        paper = next(arxiv.Client().results(arxiv.Search(id_list=[self.arxiv_id])))
+        
+        if (source_download == "source"):
+            paper.download_source(dirpath=self.download_src_dir, 
+                                  filename=self.download_name)
+        else:
+            paper.download_pdf(dirpath=self.download_dir, 
+                               filename=self.download_name)
+
     def prompt_for_download(self):
         """
         Prompts for the user before downloading of the paper
@@ -94,20 +139,9 @@ class PaperDownloader():
         print(f"The paper title is: {self.full_title}\n")
         print(f"The paper author(s) are: {self.full_authors}\n")
 
-        download_ans = input("Would you life to download this paper? (Y/n): ")
+        download_ans = self.input_with_default("Would you life to download this paper? (Y/n): ", "y")
         
-        if download_ans.lower() == "":
-            download_ans = 'y'
-        
-        if download_ans.lower() not in ['y', 'n']:
-            raise ValueError(f"Unknown answer to download question. Exiting...")
-        
-        download_src_ans = input("Would you life to download the source for this paper? (y/N): ")
-        if download_src_ans.lower() == "":
-            download_src_ans = 'n'
-    
-        if download_src_ans.lower() not in ['y', 'n']:
-            raise ValueError(f"Unknown answer to download source question. Exiting...")
+        download_src_ans = self.input_with_default("Would you life to download the source for this paper? (y/N): ", "n")
         
         if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
             print("No download will happen. Exiting...")
