@@ -166,13 +166,14 @@ class PaperDownloader():
         as well as this paper's string to csv file
         """
     
-        csv_str = f"\"{self.full_title}\", \"{self.full_authors}\", {self.arxiv_id}, {self.year}, {self.label}"
+        csv_str = f"\"{self.full_title}\", \"{self.full_authors}\", \"{self.arxiv_id}\", \"{self.year}\", \"{self.label}\""
     
         csv_file = open(self.citerius.csv_file, "a")
         csv_file.write(csv_str)
         csv_file.close()
     
         bib_file = open(self.citerius.bibtex_file, "a")
+        bib_file.write("\n")
         bib_file.write(self.citation_str)
         bib_file.close()
         
