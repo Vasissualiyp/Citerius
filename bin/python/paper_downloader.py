@@ -56,8 +56,12 @@ class PaperDownloader():
 
         if Path(self.download_path).exists() and self.download_ans == 'y':
             overwrite = self.input_with_default(f"The pdf of paper with label {self.label} was already downloaded. Overwrite? (y/N)", 'n')
+        else:
+            overwrite = 'n'
         
-        print(self.citation_str)
+        if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
+
+        self.download_paper()
 
     def input_with_default(self, prompt: str, default: str):
         """
@@ -99,7 +103,12 @@ class PaperDownloader():
         full_author_list = bibdata.persons['author']
         full_author_str = ""
         for author in full_author_list:
-            full_author_str += concat_string + str(author)
+            author_str = str(author)
+            lastname =  str(author_str.split()[0])
+            firstname = str(author_str.split()[1])
+            lastname_alpha = ''.join(char for char in lastname if char.isalpha())
+            firstname_alpha = ''.join(char for char in firstname if char.isalpha())
+            full_author_str += concat_string + lastname_alpha + " " + firstname_alpha[0]
         full_author_str = full_author_str[len(concat_string):]
     
         # Create default label
@@ -116,20 +125,17 @@ class PaperDownloader():
         self.year = year
         self.default_label = default_label
 
-    def download_paper(self, source_download):
+    def download_paper(self):
         """
         Downloads paper or its source from arxiv
-    
-        Args:
-            source_download(str): whether to download src of the paper or just the pdf
         """
         paper = next(arxiv.Client().results(arxiv.Search(id_list=[self.arxiv_id])))
         
-        if (source_download == "source"):
-            paper.download_source(dirpath=self.download_src_dir, 
+        if (self.download_ans == 'y'):
+            paper.download_source(dirpath=self.download_dir, 
                                   filename=self.download_name)
-        else:
-            paper.download_pdf(dirpath=self.download_dir, 
+        if (self.download_src_ans == 'y'):
+            paper.download_pdf(dirpath=self.download_src_dir, 
                                filename=self.download_name)
 
     def prompt_for_download(self):
@@ -160,7 +166,7 @@ class PaperDownloader():
         as well as this paper's string to csv file
         """
     
-        csv_str = f"{self.full_title}, {self.full_authors}, {self.arxiv_id}, {self.year}, {self.label}"
+        csv_str = f"\"{self.full_title}\", \"{self.full_authors}\", {self.arxiv_id}, {self.year}, {self.label}"
     
         csv_file = open(self.citerius.csv_file, "a")
         csv_file.write(csv_str)
@@ -171,6 +177,7 @@ class PaperDownloader():
         bib_file.close()
         
 #ref_dir = sys.argv[1]
-arxiv_id = "2504.18004"
+#arxiv_id = "2504.18004"
 ref_dir = "/home/vasilii/research/references"
+arxiv_id = input("Arxiv paper id: ")
 paper_download = PaperDownloader(ref_dir, arxiv_id)
