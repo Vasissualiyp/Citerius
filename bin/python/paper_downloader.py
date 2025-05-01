@@ -32,36 +32,49 @@ class PaperDownloader():
 
         self.citerius = CiteriusConfig(ref_dir)
         self.arxiv_id = arxiv_id
-        
         self.get_paper_info()
         
+    def download_paper_with_user_input(self):
+        """
+        Downloads the paper with required user input
+        """
         self.prompt_for_download()
         
         # Change the paper's label in its bibtex citation
         self.citation_str = self.citation_str.replace(arxiv_id, self.label, 1)
         
-        # Prepare file-name variables for downloading of the paper/its source
-        self.download_dir = os.path.join(self.citerius.parent_dir, self.label)
-        self.download_name = self.label + '.pdf'
-        self.download_path = os.path.join(self.download_dir, self.download_name)
-        self.download_src_dir = os.path.join(self.download_dir, "src")
-        self.download_src_path = os.path.join(self.download_src_dir, self.label + ".tar.gz")
-        
+        self.setup_download_paths()
+
         try:
             os.mkdir(self.download_dir)
             self.append_bibtex()
         except:
             print(f"There is already a paper with the label {self.label}")
-            #raise NotImplementedError("Overwriting isn't implemented yet")
 
+        self.overwrite_prompt()
+        self.download_paper()
+        print("The paper was downloaded successfully!")
+    
+    def setup_download_paths(self):
+        """
+        Sets up relevant paths for downloading of the paper or its source
+        """
+        self.download_dir = os.path.join(self.citerius.parent_dir, self.label)
+        self.download_name = self.label + '.pdf'
+        self.download_path = os.path.join(self.download_dir, self.download_name)
+        self.download_src_dir = os.path.join(self.download_dir, "src")
+        self.download_src_path = os.path.join(self.download_src_dir, self.label + ".tar.gz")
+
+    def overwrite_prompt(self):
+        """
+        Treatment of overwriting of paper pdf via prompting the user
+        """
         if Path(self.download_path).exists() and self.download_ans == 'y':
             overwrite = self.input_with_default(f"The pdf of paper with label {self.label} was already downloaded. Overwrite? (y/N)", 'n')
         else:
             overwrite = 'n'
         
         if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
-
-        self.download_paper()
 
     def input_with_default(self, prompt: str, default: str):
         """
@@ -173,12 +186,14 @@ class PaperDownloader():
         csv_file.close()
     
         bib_file = open(self.citerius.bibtex_file, "a")
-        bib_file.write("\n")
+        bib_file.write(self.citation_str)
         bib_file.write(self.citation_str)
         bib_file.close()
         
-#ref_dir = sys.argv[1]
-#arxiv_id = "2504.18004"
-ref_dir = "/home/vasilii/research/references"
-arxiv_id = input("Arxiv paper id: ")
-paper_download = PaperDownloader(ref_dir, arxiv_id)
+if __name__ == "__main__":
+    #ref_dir = sys.argv[1]
+    #arxiv_id = "2504.18006"
+    ref_dir = "/home/vasilii/research/references"
+    arxiv_id = input("Arxiv paper id: ")
+    paper_download = PaperDownloader(ref_dir, arxiv_id)
+    paper_download,download_paper_with_user_input()
