@@ -1,6 +1,7 @@
 import pandas as pd
-import pybtex
 from pyfzf import FzfPrompt
+import tempfile
+import shutil
 import os
 import sys
 import re
@@ -29,6 +30,35 @@ def find_bibtex_entry(content, label):
         content_str += line
     match = regex.search(content_str)
     return match.group(0) if match else None
+
+def remove_multiline_block(file_path, start_pattern, end_pattern):
+    # Create a temporary file to write the cleaned content
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+        with open(file_path, 'r') as original_file:
+            in_block = False  # Track whether we're inside the block to remove
+            for line in original_file:
+                if re.match(start_pattern, line):
+                    in_block = True  # Block starts here
+                if not in_block:
+                    temp_file.write(line)  # Write lines outside the block
+                if in_block and re.search(end_pattern, line):
+                    in_block = False  # Block ends here (skip closing line)
+        # Replace the original file with the temporary file
+        os.replace(temp_file.name, file_path)
+
+
+def remove_ith_line(filename, i):
+    temp_filename = f"{filename}.tmp"
+    line_count = 0
+
+    with open(filename, 'r') as infile, open(temp_filename, 'w') as outfile:
+        for line in infile:
+            if line_count != i:
+                outfile.write(line)
+            line_count += 1
+
+    # Replace the original file with the temporary file
+    os.replace(temp_filename, filename)
 
 class CiteriusConfig():
     def __init__(self, ref_dir: str):
@@ -86,21 +116,27 @@ class CiteriusConfig():
         labels_column = self.df['Label'].tolist()
         label_idx = labels_column.index(label)
         
-        csv = open(self.csv_file)
-        content = csv.readlines()
-        print(content[label_idx+1])
+        # Remove csv entry
+        remove_ith_line(self.csv_file, label_idx + 1)
 
-        bib = open(self.bibtex_file)
-        content = bib.readlines()
-        matches = find_bibtex_entry(content, label)
-        print(matches)
+        # Remove bibtex entry
+        escaped_label = re.escape(label)
+        start_pattern = re.compile(r'^@[a-z]+\{%s\s*,' % escaped_label)  # Match "@article{<label>,"
+        end_pattern = re.compile(r'^\s*}\s*$\s*$')  # Match a line with only "}"
+        remove_multiline_block(self.bibtex_file, start_pattern, end_pattern)
+        
+        # Remove directory with paper pdf and its src if needed
+        paper_dir = os.path.join(self.parent_dir, label)
+        try:
+            shutil.rmtree(paper_dir)
+        except:
+            print("Directory with the paper's pdf doesn't exist")
+
 
 if __name__ == "__main__":
     ref_dir = sys.argv[1]
     #ref_dir = "/home/vasilii/research/references"
     citerius = CiteriusConfig(ref_dir)
-    #label = citerius.fuzzy_find_label()
+    label = citerius.fuzzy_find_label()
     label = "FirstStars"
     print(label)
-    citerius.load_df()
-    citerius.remove_paper(label)
