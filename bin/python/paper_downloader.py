@@ -41,7 +41,7 @@ class PaperDownloader():
         self.prompt_for_download()
         
         # Change the paper's label in its bibtex citation
-        self.citation_str = self.citation_str.replace(arxiv_id, self.label, 1)
+        self.citation_str = self.citation_str.replace(self.arxiv_id, self.label, 1)
         
         self.setup_download_paths()
 
@@ -52,6 +52,36 @@ class PaperDownloader():
             print(f"There is already a paper with the label {self.label}")
 
         self.overwrite_prompt()
+        self.download_paper()
+        print("The paper was downloaded successfully!")
+
+    def download_paper_without_user_input(self, 
+                                          download_paper,
+                                          download_src,
+                                          label,
+                                          overwrite):
+        """
+        Downloads the paper without user input, by passing answers directly instead
+        """
+        self.download_ans = download_paper.lower()
+        self.download_src_ans = download_src.lower()
+        if label == "":
+            self.label = self.default_label
+        else:
+            self.label = label
+        
+        # Change the paper's label in its bibtex citation
+        self.citation_str = self.citation_str.replace(self.arxiv_id, self.label, 1)
+        
+        self.setup_download_paths()
+
+        try:
+            os.mkdir(self.download_dir)
+            self.append_bibtex()
+        except:
+            print(f"There is already a paper with the label {self.label}")
+
+        if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
         self.download_paper()
         print("The paper was downloaded successfully!")
     
@@ -145,10 +175,11 @@ class PaperDownloader():
         paper = next(arxiv.Client().results(arxiv.Search(id_list=[self.arxiv_id])))
         
         if (self.download_ans == 'y'):
-            paper.download_source(dirpath=self.download_dir, 
+            print(f"Will start downloading the paper {self.label}, into {self.download_dir}, filename {self.download_name}...")
+            paper.download_pdf(dirpath=self.download_dir, 
                                   filename=self.download_name)
         if (self.download_src_ans == 'y'):
-            paper.download_pdf(dirpath=self.download_src_dir, 
+            paper.download_source(dirpath=self.download_src_dir, 
                                filename=self.download_name)
 
     def prompt_for_download(self):
@@ -164,10 +195,11 @@ class PaperDownloader():
         
         if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
             print("No download will happen. Exiting...")
-        
-        label = input("What would be the paper's label? (leave empty for default): ")
-        if label == "":
-            label = self.default_label
+            label = "NaN"
+        else:
+            label = input("What would be the paper's label? (leave empty for default): ")
+            if label == "":
+                label = self.default_label
     
         self.download_ans = download_ans.lower()
         self.download_src_ans = download_src_ans.lower()
@@ -192,7 +224,7 @@ class PaperDownloader():
         
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
-    #arxiv_id = "2504.18006"
+    #arxiv_id = "2504.18016"
     ref_dir = "/home/vasilii/research/references"
     arxiv_id = input("Arxiv paper id: ")
     paper_download = PaperDownloader(ref_dir, arxiv_id)
