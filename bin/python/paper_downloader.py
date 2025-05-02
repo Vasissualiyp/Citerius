@@ -6,6 +6,7 @@ import os
 import sys
 import asyncio
 import arxiv
+import tarfile
 
 def get_citation_from_arxiv_id(arxiv_addr):
     """
@@ -44,12 +45,7 @@ class PaperDownloader():
         self.citation_str = self.citation_str.replace(self.arxiv_id, self.label, 1)
         
         self.setup_download_paths()
-
-        try:
-            os.mkdir(self.download_dir)
-            self.append_bibtex()
-        except:
-            print(f"There is already a paper with the label {self.label}")
+        self.create_dirs()
 
         self.overwrite_prompt()
         self.download_paper()
@@ -74,16 +70,28 @@ class PaperDownloader():
         self.citation_str = self.citation_str.replace(self.arxiv_id, self.label, 1)
         
         self.setup_download_paths()
+        self.create_dirs()
 
+        if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
+        self.download_paper()
+        print("The paper was downloaded successfully!")
+
+    def create_dirs(self):
+        """
+        Creates directories for downloading of the paper and 
+        appends paper info to bibtex, csv files
+        """
         try:
             os.mkdir(self.download_dir)
             self.append_bibtex()
         except:
             print(f"There is already a paper with the label {self.label}")
 
-        if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
-        self.download_paper()
-        print("The paper was downloaded successfully!")
+        if self.download_src_ans == 'y':
+            try:
+                os.mkdir(self.download_src_dir)
+            except:
+                print(f"There is already source for a paper with the label {self.label}")
     
     def setup_download_paths(self):
         """
@@ -92,8 +100,10 @@ class PaperDownloader():
         self.download_dir = os.path.join(self.citerius.parent_dir, self.label)
         self.download_name = self.label + '.pdf'
         self.download_path = os.path.join(self.download_dir, self.download_name)
+
         self.download_src_dir = os.path.join(self.download_dir, "src")
-        self.download_src_path = os.path.join(self.download_src_dir, self.label + ".tar.gz")
+        self.download_src_name = self.label + '.tar.gz'
+        self.download_src_path = os.path.join(self.download_src_dir, self.download_src_name)
 
     def overwrite_prompt(self):
         """
@@ -175,12 +185,19 @@ class PaperDownloader():
         paper = next(arxiv.Client().results(arxiv.Search(id_list=[self.arxiv_id])))
         
         if (self.download_ans == 'y'):
-            print(f"Will start downloading the paper {self.label}, into {self.download_dir}, filename {self.download_name}...")
+            print(f"Will start downloading the paper {self.label}")
             paper.download_pdf(dirpath=self.download_dir, 
-                                  filename=self.download_name)
-        if (self.download_src_ans == 'y'):
-            paper.download_source(dirpath=self.download_src_dir, 
                                filename=self.download_name)
+            print("Done!")
+        if (self.download_src_ans == 'y'):
+            print(f"Will start downloading source ofthe paper {self.label}")
+            paper.download_source(dirpath=self.download_src_dir, 
+                                  filename=self.download_src_name)
+            print("Download done! Uncompressing the .tar file...")
+            file = tarfile.open(self.download_src_path)
+            file.extractall(self.download_src_dir)
+            file.close()
+            print("Done!")
 
     def prompt_for_download(self):
         """
@@ -218,7 +235,6 @@ class PaperDownloader():
         csv_file.close()
     
         bib_file = open(self.citerius.bibtex_file, "a")
-        bib_file.write("\n")
         bib_file.write(self.citation_str)
         bib_file.close()
         
