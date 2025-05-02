@@ -32,20 +32,25 @@ def find_bibtex_entry(content, label):
     return match.group(0) if match else None
 
 def remove_multiline_block(file_path, start_pattern, end_pattern):
-    # Create a temporary file to write the cleaned content
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+    # Create a temporary file in the SAME DIRECTORY as the original file
+    file_dir = os.path.dirname(file_path)
+    with tempfile.NamedTemporaryFile(
+        mode='w', 
+        delete=False,
+        dir=file_dir  # Critical: Create temp file in same directory/device
+    ) as temp_file:
         with open(file_path, 'r') as original_file:
-            in_block = False  # Track whether we're inside the block to remove
+            in_block = False
             for line in original_file:
                 if re.match(start_pattern, line):
-                    in_block = True  # Block starts here
+                    in_block = True
                 if not in_block:
-                    temp_file.write(line)  # Write lines outside the block
+                    temp_file.write(line)
                 if in_block and re.search(end_pattern, line):
-                    in_block = False  # Block ends here (skip closing line)
-        # Replace the original file with the temporary file
-        os.replace(temp_file.name, file_path)
+                    in_block = False
 
+    # Replace the original file (now guaranteed to be on same device)
+    os.replace(temp_file.name, file_path)
 
 def remove_ith_line(filename, i):
     temp_filename = f"{filename}.tmp"
@@ -134,9 +139,9 @@ class CiteriusConfig():
 
 
 if __name__ == "__main__":
-    ref_dir = sys.argv[1]
-    #ref_dir = "/home/vasilii/research/references"
+    #ref_dir = sys.argv[1]
+    ref_dir = "/home/vasilii/research/references"
     citerius = CiteriusConfig(ref_dir)
     label = citerius.fuzzy_find_label()
-    label = "FirstStars"
     print(label)
+    #citerius.remove_paper(label)
