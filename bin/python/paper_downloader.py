@@ -4,6 +4,7 @@ from config import CiteriusConfig
 from pathlib import Path
 from urllib.request import urlretrieve
 import os
+import re
 import sys
 import asyncio
 import arxiv
@@ -33,9 +34,23 @@ class PaperDownloader():
         """
 
         self.citerius = CiteriusConfig(ref_dir)
-        self.arxiv_id = arxiv_id
+        self.check_if_string_is_arxiv_id(arxiv_id)
         self.get_paper_info()
         
+    def check_if_string_is_arxiv_id(self, string):
+        """
+        Checks if the passed string is in arxiv id format.
+        Sets up arxiv_id and download_link variables.
+        """
+        pattern = r'^(\d{4}\.\d{4,5}(v\d+)?|\d{7}(v\d+)?)$'
+        if re.match(pattern, string) == None:
+            self.arxiv_id = "nan"
+            self.download_link = string
+        else:
+            self.download_link = "nan"
+            self.arxiv_id = string
+
+
     def download_paper_with_user_input(self):
         """
         Downloads the paper with required user input
@@ -209,7 +224,10 @@ class PaperDownloader():
 
         download_ans = self.input_with_default("Would you life to download this paper? (Y/n): ", "y")
         
-        download_src_ans = self.input_with_default("Would you life to download the source for this paper? (y/N): ", "n")
+        if self.download_link == "nan":
+            download_src_ans = self.input_with_default("Would you life to download the source for this paper? (y/N): ", "n")
+        else:
+            download_src_ans = 'n'
         
         if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
             print("No download will happen. Exiting...")
@@ -248,11 +266,8 @@ class PaperDownloader():
         
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
-    arxiv_id = "2504.18016"
-
     ref_dir = "/home/vasilii/research/references"
-    #arxiv_id = input("Arxiv paper id: ")
+    arxiv_id = input("Arxiv paper id / Download link: ")
     paper_download = PaperDownloader(ref_dir, arxiv_id)
-    #paper_download.download_paper_with_user_input()
-    link = "https://articles.adsabs.harvard.edu/cgi-bin/nph-iarticle_query?1970A%26A.....5...84Z&defaultprint=YES&filetype=.pdf"
-    paper_download.download_paper_from_link(link)
+    paper_download.download_paper_with_user_input()
+    #paper_download.download_paper_from_link(link)
