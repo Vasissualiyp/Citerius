@@ -2,6 +2,7 @@ import pybibget as pbg
 import pybtex as pbt
 from config import CiteriusConfig
 from pathlib import Path
+from urllib.request import urlretrieve
 import os
 import sys
 import asyncio
@@ -237,11 +238,21 @@ class PaperDownloader():
         bib_file = open(self.citerius.bibtex_file, "a")
         bib_file.write(self.citation_str)
         bib_file.close()
+
+    def download_paper_from_link(self, link: str):
+        """
+        Downloads the paper from a provided link, not from arxiv
+        """
+        filename="test.pdf"
+        urlretrieve(link, filename)
         
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
-    #arxiv_id = "2504.18016"
+    arxiv_id = "2504.18016"
+
     ref_dir = "/home/vasilii/research/references"
-    arxiv_id = input("Arxiv paper id: ")
+    #arxiv_id = input("Arxiv paper id: ")
     paper_download = PaperDownloader(ref_dir, arxiv_id)
-    paper_download.download_paper_with_user_input()
+    #paper_download.download_paper_with_user_input()
+    link = "https://articles.adsabs.harvard.edu/cgi-bin/nph-iarticle_query?1970A%26A.....5...84Z&defaultprint=YES&filetype=.pdf"
+    paper_download.download_paper_from_link(link)
