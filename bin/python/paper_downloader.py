@@ -9,6 +9,36 @@ import sys
 import asyncio
 import arxiv
 import tarfile
+import tempfile
+import subprocess
+
+def get_user_input_via_editor(editor=None):
+    # Determine the editor to use (defaults to vim or $EDITOR environment variable)
+    if editor is None:
+        editor = os.environ.get('EDITOR', 'vim')
+    
+    # Create a temporary file with a recognizable suffix
+    with tempfile.NamedTemporaryFile(suffix='.txt', mode='w', delete=False) as tf:
+        temp_filename = tf.name
+    
+    try:
+        # Launch the editor and wait for it to close
+        subprocess.run([editor, temp_filename], check=True)
+        
+        # Read the contents of the temporary file
+        with open(temp_filename, 'r') as f:
+            content = f.read()
+    except subprocess.CalledProcessError as e:
+        print(f"Editor error: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+    finally:
+        # Clean up the temporary file
+        os.unlink(temp_filename)
+    
+    return content
 
 def get_citation_from_arxiv_id(arxiv_addr):
     """
@@ -264,9 +294,12 @@ class PaperDownloader():
         urlretrieve(link, filename)
         
 if __name__ == "__main__":
-    #ref_dir = sys.argv[1]
-    ref_dir = "/home/vasilii/research/references"
-    arxiv_id = input("Arxiv paper id / Download link: ")
-    paper_download = PaperDownloader(ref_dir, arxiv_id)
-    paper_download.download_paper_with_user_input()
-    #paper_download.download_paper_from_link(link)
+    ##ref_dir = sys.argv[1]
+    #ref_dir = "/home/vasilii/research/references"
+    #arxiv_id = input("Arxiv paper id / Download link: ")
+    #paper_download = PaperDownloader(ref_dir, arxiv_id)
+    #paper_download.download_paper_with_user_input()
+    ##paper_download.download_paper_from_link(link)
+
+    content =get_user_input_via_editor("vim")
+    print(content)
