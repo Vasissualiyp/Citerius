@@ -168,13 +168,13 @@ class PaperDownloader():
         """
     
         concat_string = " and " 
-        citation_str = get_citation_from_arxiv_id(self.arxiv_id)
+        self.citation_str = get_citation_from_arxiv_id(self.arxiv_id)
         
         # Extract bibliography data from citation string
-        bibdata = pbt.database.parse_string(citation_str, "bibtex").entries[self.arxiv_id]
+        bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[self.arxiv_id]
         
-        full_title = bibdata.fields['title']
-        year = bibdata.fields['year']
+        self.full_title = bibdata.fields['title']
+        self.year = bibdata.fields['year']
         full_author_list = bibdata.persons['author']
         full_author_str = ""
         for author in full_author_list:
@@ -184,21 +184,14 @@ class PaperDownloader():
             lastname_alpha = ''.join(char for char in lastname if char.isalpha())
             firstname_alpha = ''.join(char for char in firstname if char.isalpha())
             full_author_str += concat_string + lastname_alpha + " " + firstname_alpha[0]
-        full_author_str = full_author_str[len(concat_string):]
+        self.full_authors = full_author_str[len(concat_string):]
     
         # Create default label
         first_author = full_author_list[0]
         first_author_lastname = str(first_author).split()[1].strip()
         first_word_title = str(full_title).split()[0].strip()
         first_word_title_alpha = ''.join(char for char in first_word_title if char.isalpha())
-        default_label = first_author_lastname + first_word_title_alpha + year
-    
-        # Save info as class variables
-        self.citation_str = citation_str
-        self.full_title = full_title
-        self.full_authors = full_author_str
-        self.year = year
-        self.default_label = default_label
+        self.default_label = first_author_lastname + first_word_title_alpha + year
 
     def download_paper(self):
         """
