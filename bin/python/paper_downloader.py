@@ -35,7 +35,10 @@ class PaperDownloader():
 
         self.citerius = CiteriusConfig(ref_dir)
         self.check_if_string_is_arxiv_id(arxiv_id)
-        self.get_paper_info()
+        if self.download_link == 'nan':
+            self.get_arxiv_paper_info()
+        else:
+            pass
         
     def check_if_string_is_arxiv_id(self, string):
         """
@@ -159,7 +162,7 @@ class PaperDownloader():
                 num_attempts -= 1
         raise TimeoutError("Too many wrong attempts")
 
-    def get_paper_info(self):
+    def get_arxiv_paper_info(self):
         """
         Obtains a bunch of paper information from aixiv id
         """
@@ -250,7 +253,7 @@ class PaperDownloader():
         as well as this paper's string to csv file
         """
     
-        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\""
+        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\",\"{self.download_link}\""
     
         csv_file = open(self.citerius.csv_file, "a")
         csv_file.write(csv_str)
