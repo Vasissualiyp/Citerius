@@ -55,6 +55,20 @@ def get_citation_from_arxiv_id(arxiv_addr):
 
     return bib_data
 
+def obtain_label_from_bibentry(bib_entry):
+    """
+    Obtains label for bibliographic entry from string with .bib entry
+    """
+    # Process each line to find the label
+    for line in bib_entry.splitlines():
+        stripped_line = line.strip()
+        if stripped_line.startswith('@'):
+            # Match the pattern: @<entry_type>{<label>
+            match = re.match(r'@([a-z]+)\s*{\s*([^,]+)', stripped_line)
+            if match:
+                label = match.group(2)
+                return label
+
 class PaperDownloader():
     def __init__(self, ref_dir: str, arxiv_id: str):
         """
@@ -103,6 +117,8 @@ class PaperDownloader():
         ]
         content_nocomments = '\n'.join(lines)
         self.citation_str = content_nocomments
+        init_label = obtain_label_from_bibentry(self.citation_str)
+        self.citation_str = self.citation_str.replace(init_label, "nan", 1)
         
     def check_if_string_is_arxiv_id(self, string):
         """
@@ -251,9 +267,9 @@ class PaperDownloader():
         # Create default label
         first_author = full_author_list[0]
         first_author_lastname = str(first_author).split()[1].strip()
-        first_word_title = str(full_title).split()[0].strip()
+        first_word_title = str(self.full_title).split()[0].strip()
         first_word_title_alpha = ''.join(char for char in first_word_title if char.isalpha())
-        self.default_label = first_author_lastname + first_word_title_alpha + year
+        self.default_label = first_author_lastname + first_word_title_alpha + self.year
 
     def download_paper(self):
         """
@@ -327,8 +343,7 @@ class PaperDownloader():
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
     ref_dir = "/home/vasilii/research/references"
-    #arxiv_id = input("Arxiv paper id / Download link: ")
-    arxiv_id = "https://articles.adsabs.harvard.edu/cgi-bin/nph-iarticle_query?1970A%26A.....5...84Z&defaultprint=YES&filetype=.pdf"
+    arxiv_id = input("Arxiv paper id / Download link: ")
     paper_download = PaperDownloader(ref_dir, arxiv_id)
     paper_download.download_paper_with_user_input()
     #paper_download.download_paper_from_link(link)
