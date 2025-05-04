@@ -12,7 +12,7 @@ import tarfile
 import tempfile
 import subprocess
 
-def get_user_input_via_editor(editor=None):
+def get_user_input_via_editor(initial_content="", editor=None):
     # Determine the editor to use (defaults to vim or $EDITOR environment variable)
     if editor is None:
         editor = os.environ.get('EDITOR', 'vim')
@@ -20,6 +20,7 @@ def get_user_input_via_editor(editor=None):
     # Create a temporary file with a recognizable suffix
     with tempfile.NamedTemporaryFile(suffix='.txt', mode='w', delete=False) as tf:
         temp_filename = tf.name
+        tf.write(initial_content)
     
     try:
         # Launch the editor and wait for it to close
@@ -65,19 +66,44 @@ class PaperDownloader():
 
         self.citerius = CiteriusConfig(ref_dir)
         self.check_if_string_is_arxiv_id(arxiv_id)
-        if self.download_link == 'nan':
-            self.get_arxiv_paper_info()
-        else:
-            pass
+
+        if self.download_link == 'nan': # Arxiv paper
+            self.citation_str = get_citation_from_arxiv_id(self.arxiv_id)
+        else: # Paper with link to download
+            editor = "vim"
+            self.get_citation_from_tmpfile(editor)
+
+        self.get_arxiv_paper_info()
         
-    def get_paper_info_from_tmpfile(self):
+    def get_citation_from_tmpfile(self, editor: str):
         """
         Function to prompt user to insert biiliography
         info into temporary file, which it then reads and
         extracts relevant data from
         """
+        initial_content_str = '''
+% Please, paste the bibliography file here.
+% All lines starting with '%' will be ignored.
+% You can also uncomment and edit the sample 
+% minimal bibliography entry below:
+%@unpublished{label,
+%    author = "Doe, John and Last, First",
+%    title = "Title",
+%    year = "2000"
+%}
+'''
+        content = get_user_input_via_editor(initial_content_str, editor)
+        # Remove lines starting with % and empty lines
+        if content == None:
+            print("No bibliography info was provided. Exiting...")
+            exit(0)
+        lines = [ 
+            line for line in content.split('\n')
+            if line.strip() != '' and not line.lstrip().startswith('%')
+        ]
+        content_nocomments = '\n'.join(lines)
+        self.citation_str = content_nocomments
         
-
     def check_if_string_is_arxiv_id(self, string):
         """
         Checks if the passed string is in arxiv id format.
@@ -90,7 +116,6 @@ class PaperDownloader():
         else:
             self.download_link = "nan"
             self.arxiv_id = string
-
 
     def download_paper_with_user_input(self):
         """
@@ -206,7 +231,6 @@ class PaperDownloader():
         """
     
         concat_string = " and " 
-        self.citation_str = get_citation_from_arxiv_id(self.arxiv_id)
         
         # Extract bibliography data from citation string
         bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[self.arxiv_id]
@@ -299,14 +323,12 @@ class PaperDownloader():
         Downloads the paper from a provided link, not from arxiv
         """
         urlretrieve(self.download_link, self.download_path)
-        
-if __name__ == "__main__":
-    ##ref_dir = sys.argv[1]
-    #ref_dir = "/home/vasilii/research/references"
-    #arxiv_id = input("Arxiv paper id / Download link: ")
-    #paper_download = PaperDownloader(ref_dir, arxiv_id)
-    #paper_download.download_paper_with_user_input()
-    ##paper_download.download_paper_from_link(link)
 
-    content = get_user_input_via_editor("vim")
-    print(content)
+if __name__ == "__main__":
+    #ref_dir = sys.argv[1]
+    ref_dir = "/home/vasilii/research/references"
+    #arxiv_id = input("Arxiv paper id / Download link: ")
+    arxiv_id = "https://articles.adsabs.harvard.edu/cgi-bin/nph-iarticle_query?1970A%26A.....5...84Z&defaultprint=YES&filetype=.pdf"
+    paper_download = PaperDownloader(ref_dir, arxiv_id)
+    paper_download.download_paper_with_user_input()
+    #paper_download.download_paper_from_link(link)
