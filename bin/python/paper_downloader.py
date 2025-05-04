@@ -70,6 +70,14 @@ class PaperDownloader():
         else:
             pass
         
+    def get_paper_info_from_tmpfile(self):
+        """
+        Function to prompt user to insert biiliography
+        info into temporary file, which it then reads and
+        extracts relevant data from
+        """
+        
+
     def check_if_string_is_arxiv_id(self, string):
         """
         Checks if the passed string is in arxiv id format.
@@ -286,12 +294,11 @@ class PaperDownloader():
         bib_file.write(self.citation_str)
         bib_file.close()
 
-    def download_paper_from_link(self, link: str):
+    def download_paper_from_link(self):
         """
         Downloads the paper from a provided link, not from arxiv
         """
-        filename="test.pdf"
-        urlretrieve(link, filename)
+        urlretrieve(self.download_link, self.download_path)
         
 if __name__ == "__main__":
     ##ref_dir = sys.argv[1]
@@ -301,5 +308,5 @@ if __name__ == "__main__":
     #paper_download.download_paper_with_user_input()
     ##paper_download.download_paper_from_link(link)
 
-    content =get_user_input_via_editor("vim")
+    content = get_user_input_via_editor("vim")
     print(content)
