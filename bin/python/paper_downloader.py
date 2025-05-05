@@ -12,62 +12,63 @@ import tarfile
 import tempfile
 import subprocess
 
-def get_user_input_via_editor(initial_content="", editor=None):
-    # Determine the editor to use (defaults to vim or $EDITOR environment variable)
-    if editor is None:
-        editor = os.environ.get('EDITOR', 'vim')
-    
-    # Create a temporary file with a recognizable suffix
-    with tempfile.NamedTemporaryFile(suffix='.txt', mode='w', delete=False) as tf:
-        temp_filename = tf.name
-        tf.write(initial_content)
-    
-    try:
-        # Launch the editor and wait for it to close
-        subprocess.run([editor, temp_filename], check=True)
+class CiteriusUtils():
+    def get_user_input_via_editor(self, initial_content="", editor=None):
+        # Determine the editor to use (defaults to vim or $EDITOR environment variable)
+        if editor is None:
+            editor = os.environ.get('EDITOR', 'vim')
         
-        # Read the contents of the temporary file
-        with open(temp_filename, 'r') as f:
-            content = f.read()
-    except subprocess.CalledProcessError as e:
-        print(f"Editor error: {e}")
-        return None
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
-    finally:
-        # Clean up the temporary file
-        os.unlink(temp_filename)
+        # Create a temporary file with a recognizable suffix
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w', delete=False) as tf:
+            temp_filename = tf.name
+            tf.write(initial_content)
+        
+        try:
+            # Launch the editor and wait for it to close
+            subprocess.run([editor, temp_filename], check=True)
+            
+            # Read the contents of the temporary file
+            with open(temp_filename, 'r') as f:
+                content = f.read()
+        except subprocess.CalledProcessError as e:
+            print(f"Editor error: {e}")
+            return None
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+        finally:
+            # Clean up the temporary file
+            os.unlink(temp_filename)
+        
+        return content
     
-    return content
-
-def get_citation_from_arxiv_id(arxiv_addr):
-    """
-    Takes in paper arxiv id, returns string with bibget citation
-    """
+    def get_citation_from_arxiv_id(self, arxiv_addr):
+        """
+        Takes in paper arxiv id, returns string with bibget citation
+        """
+        
+        keys = [arxiv_addr]
+        
+        bibget = pbg.Bibget(mathscinet=True)
+        bib_data = asyncio.run(bibget.citations(keys))
+        number_of_entries = len(bib_data.entries)
+        bib_data = bib_data.to_string('bibtex')
     
-    keys = [arxiv_addr]
+        return bib_data
     
-    bibget = pbg.Bibget(mathscinet=True)
-    bib_data = asyncio.run(bibget.citations(keys))
-    number_of_entries = len(bib_data.entries)
-    bib_data = bib_data.to_string('bibtex')
-
-    return bib_data
-
-def obtain_label_from_bibentry(bib_entry):
-    """
-    Obtains label for bibliographic entry from string with .bib entry
-    """
-    # Process each line to find the label
-    for line in bib_entry.splitlines():
-        stripped_line = line.strip()
-        if stripped_line.startswith('@'):
-            # Match the pattern: @<entry_type>{<label>
-            match = re.match(r'@([a-z]+)\s*{\s*([^,]+)', stripped_line)
-            if match:
-                label = match.group(2)
-                return label
+    def obtain_label_from_bibentry(self, bib_entry):
+        """
+        Obtains label for bibliographic entry from string with .bib entry
+        """
+        # Process each line to find the label
+        for line in bib_entry.splitlines():
+            stripped_line = line.strip()
+            if stripped_line.startswith('@'):
+                # Match the pattern: @<entry_type>{<label>
+                match = re.match(r'@([a-z]+)\s*{\s*([^,]+)', stripped_line)
+                if match:
+                    label = match.group(2)
+                    return label
 
 class PaperDownloader():
     def __init__(self, ref_dir: str, arxiv_id: str):
@@ -79,47 +80,19 @@ class PaperDownloader():
         """
 
         self.citerius = CiteriusConfig(ref_dir)
+        self.cutils = CiteriusUtils()
         self.check_if_string_is_arxiv_id(arxiv_id)
 
         if self.download_link == 'nan': # Arxiv paper
-            self.citation_str = get_citation_from_arxiv_id(self.arxiv_id)
+            self.citation_str = self.cutils.get_citation_from_arxiv_id(self.arxiv_id)
         else: # Paper with link to download
             editor = "vim"
             self.get_citation_from_tmpfile(editor)
 
         self.get_arxiv_paper_info()
         
-    def get_citation_from_tmpfile(self, editor: str):
-        """
-        Function to prompt user to insert biiliography
-        info into temporary file, which it then reads and
-        extracts relevant data from
-        """
-        initial_content_str = '''
-% Please, paste the bibliography file here.
-% All lines starting with '%' will be ignored.
-% You can also uncomment and edit the sample 
-% minimal bibliography entry below:
-%@unpublished{label,
-%    author = "Doe, John and Last, First",
-%    title = "Title",
-%    year = "2000"
-%}
-'''
-        content = get_user_input_via_editor(initial_content_str, editor)
-        # Remove lines starting with % and empty lines
-        if content == None:
-            print("No bibliography info was provided. Exiting...")
-            exit(0)
-        lines = [ 
-            line for line in content.split('\n')
-            if line.strip() != '' and not line.lstrip().startswith('%')
-        ]
-        content_nocomments = '\n'.join(lines)
-        self.citation_str = content_nocomments
-        init_label = obtain_label_from_bibentry(self.citation_str)
-        self.citation_str = self.citation_str.replace(init_label, "nan", 1)
-        
+    # Utility functions
+
     def check_if_string_is_arxiv_id(self, string):
         """
         Checks if the passed string is in arxiv id format.
@@ -133,46 +106,75 @@ class PaperDownloader():
             self.download_link = "nan"
             self.arxiv_id = string
 
-    def download_paper_with_user_input(self):
+    def replace_label_for_citation(self):
         """
-        Downloads the paper with required user input
+        Replases the label for citation string with value in self.label
         """
-        self.prompt_for_download()
-        
-        # Change the paper's label in its bibtex citation
-        self.citation_str = self.citation_str.replace(self.arxiv_id, self.label, 1)
-        
-        self.setup_download_paths()
-        self.create_dirs()
+        if self.download_link == 'nan':
+            self.citation_str = self.citation_str.replace(self.arxiv_id, self.label, 1)
+        elif self.arxiv_id == 'nan':
+            init_label = self.cutils.obtain_label_from_bibentry(self.citation_str)
+            self.citation_str = self.citation_str.replace(init_label, self.label, 1)
 
-        self.overwrite_prompt()
-        self.download_paper()
-        print("The paper was downloaded successfully!")
-
-    def download_paper_without_user_input(self, 
-                                          download_paper,
-                                          download_src,
-                                          label,
-                                          overwrite):
+    def get_arxiv_paper_info(self):
         """
-        Downloads the paper without user input, by passing answers directly instead
+        Obtains a bunch of paper information from aixiv id
         """
-        self.download_ans = download_paper.lower()
-        self.download_src_ans = download_src.lower()
-        if label == "":
-            self.label = self.default_label
-        else:
-            self.label = label
+    
+        concat_string = " and " 
         
-        # Change the paper's label in its bibtex citation
-        self.citation_str = self.citation_str.replace(self.arxiv_id, self.label, 1)
+        # Extract bibliography data from citation string
+        bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[self.arxiv_id]
         
-        self.setup_download_paths()
-        self.create_dirs()
+        self.full_title = bibdata.fields['title']
+        self.year = bibdata.fields['year']
+        full_author_list = bibdata.persons['author']
+        full_author_str = ""
+        for author in full_author_list:
+            author_str = str(author)
+            lastname =  str(author_str.split()[0])
+            firstname = str(author_str.split()[1])
+            lastname_alpha = ''.join(char for char in lastname if char.isalpha())
+            firstname_alpha = ''.join(char for char in firstname if char.isalpha())
+            full_author_str += concat_string + lastname_alpha + " " + firstname_alpha[0]
+        self.full_authors = full_author_str[len(concat_string):]
+    
+        # Create default label
+        first_author = full_author_list[0]
+        first_author_lastname = str(first_author).split()[1].strip()
+        first_word_title = str(self.full_title).split()[0].strip()
+        first_word_title_alpha = ''.join(char for char in first_word_title if char.isalpha())
+        self.default_label = first_author_lastname + first_word_title_alpha + self.year
 
-        if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
-        self.download_paper()
-        print("The paper was downloaded successfully!")
+    # New paper download functions
+
+    def setup_download_paths(self):
+        """
+        Sets up relevant paths for downloading of the paper or its source
+        """
+        self.download_dir = os.path.join(self.citerius.parent_dir, self.label)
+        self.download_name = self.label + '.pdf'
+        self.download_path = os.path.join(self.download_dir, self.download_name)
+
+        self.download_src_dir = os.path.join(self.download_dir, "src")
+        self.download_src_name = self.label + '.tar.gz'
+        self.download_src_path = os.path.join(self.download_src_dir, self.download_src_name)
+
+    def append_bibtex(self):
+        """
+        Appends bibtex entry to the bibliography file,
+        as well as this paper's string to csv file
+        """
+    
+        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\",\"{self.download_link}\""
+    
+        csv_file = open(self.citerius.csv_file, "a")
+        csv_file.write(csv_str)
+        csv_file.close()
+    
+        bib_file = open(self.citerius.bibtex_file, "a")
+        bib_file.write(self.citation_str)
+        bib_file.close()
 
     def create_dirs(self):
         """
@@ -194,17 +196,33 @@ class PaperDownloader():
             except:
                 print(f"There is already source for a paper with the label {self.label}")
     
-    def setup_download_paths(self):
-        """
-        Sets up relevant paths for downloading of the paper or its source
-        """
-        self.download_dir = os.path.join(self.citerius.parent_dir, self.label)
-        self.download_name = self.label + '.pdf'
-        self.download_path = os.path.join(self.download_dir, self.download_name)
+    # Prompt user for input
 
-        self.download_src_dir = os.path.join(self.download_dir, "src")
-        self.download_src_name = self.label + '.tar.gz'
-        self.download_src_path = os.path.join(self.download_src_dir, self.download_src_name)
+    def prompt_for_download(self):
+        """
+        Prompts for the user before downloading of the paper
+        """
+        print(f"The paper title is: {self.full_title}\n")
+        print(f"The paper author(s) are: {self.full_authors}\n")
+
+        download_ans = self.input_with_default("Would you life to download this paper? (Y/n): ", "y")
+        
+        if self.download_link == "nan":
+            download_src_ans = self.input_with_default("Would you life to download the source for this paper? (y/N): ", "n")
+        else:
+            download_src_ans = 'n'
+        
+        if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
+            print("No download will happen. Exiting...")
+            label = "NaN"
+        else:
+            label = input("What would be the paper's label? (leave empty for default): ")
+            if label == "":
+                label = self.default_label
+    
+        self.download_ans = download_ans.lower()
+        self.download_src_ans = download_src_ans.lower()
+        self.label = label
 
     def overwrite_prompt(self):
         """
@@ -241,37 +259,92 @@ class PaperDownloader():
                 num_attempts -= 1
         raise TimeoutError("Too many wrong attempts")
 
-    def get_arxiv_paper_info(self):
+    def get_citation_from_tmpfile(self, editor: str):
         """
-        Obtains a bunch of paper information from aixiv id
+        Function to prompt user to insert biiliography
+        info into temporary file, which it then reads and
+        extracts relevant data from
         """
-    
-        concat_string = " and " 
+        initial_content_str = '''
+% Please, paste the bibliography file here.
+% All lines starting with '%' will be ignored.
+% You can also uncomment and edit the sample 
+% minimal bibliography entry below:
+%@unpublished{label,
+%    author = "Doe, John and Last, First",
+%    title = "Title",
+%    year = "2000"
+%}
+'''
+        content = self.cutils.get_user_input_via_editor(initial_content_str, editor)
+        # Remove lines starting with % and empty lines
+        if content == None:
+            print("No bibliography info was provided. Exiting...")
+            exit(0)
+        lines = [ 
+            line for line in content.split('\n')
+            if line.strip() != '' and not line.lstrip().startswith('%')
+        ]
+        content_nocomments = '\n'.join(lines)
+        self.citation_str = content_nocomments
         
-        # Extract bibliography data from citation string
-        bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[self.arxiv_id]
-        
-        self.full_title = bibdata.fields['title']
-        self.year = bibdata.fields['year']
-        full_author_list = bibdata.persons['author']
-        full_author_str = ""
-        for author in full_author_list:
-            author_str = str(author)
-            lastname =  str(author_str.split()[0])
-            firstname = str(author_str.split()[1])
-            lastname_alpha = ''.join(char for char in lastname if char.isalpha())
-            firstname_alpha = ''.join(char for char in firstname if char.isalpha())
-            full_author_str += concat_string + lastname_alpha + " " + firstname_alpha[0]
-        self.full_authors = full_author_str[len(concat_string):]
-    
-        # Create default label
-        first_author = full_author_list[0]
-        first_author_lastname = str(first_author).split()[1].strip()
-        first_word_title = str(self.full_title).split()[0].strip()
-        first_word_title_alpha = ''.join(char for char in first_word_title if char.isalpha())
-        self.default_label = first_author_lastname + first_word_title_alpha + self.year
+    # Main download externally-called funcitons
 
-    def download_paper(self):
+    def download_paper_with_user_input(self):
+        """
+        Downloads the paper with required user input
+        """
+        self.prompt_for_download()
+        
+        # Change the paper's label in its bibtex citation
+        self.replace_label_for_citation()
+        self.setup_download_paths()
+        self.create_dirs()
+
+        self.overwrite_prompt()
+        self.download_paper_general()
+
+    def download_paper_without_user_input(self, 
+                                          download_paper='y',
+                                          download_src='n',
+                                          label="",
+                                          overwrite='n'):
+        """
+        Downloads the paper without user input, by passing answers directly instead
+        """
+        self.download_ans = download_paper.lower()
+        self.download_src_ans = download_src.lower()
+        if label == "":
+            self.label = self.default_label
+        else:
+            self.label = label
+        
+        # Change the paper's label in its bibtex citation
+        self.replace_label_for_citation()
+        self.setup_download_paths()
+        self.create_dirs()
+
+        if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
+        self.download_paper_general()
+
+    # Download from sources
+
+    def download_paper_general(self):
+        """
+        General function to identify the method for paper download and download the paper itself
+        """
+        if self.download_link == 'nan':
+            self.download_arxiv_paper()
+            print("The paper was downloaded successfully!")
+        elif self.arxiv_id == 'nan':
+            self.download_paper_from_link()
+            print("The paper was downloaded successfully!")
+        else:
+            print("Unknown situation with arxiv_id and download_link both not being nan.")
+            print(f"arxiv_id: {self.arxiv_id}")
+            print(f"download_link: {self.download_link}")
+
+    def download_arxiv_paper(self):
         """
         Downloads paper or its source from arxiv
         """
@@ -292,53 +365,13 @@ class PaperDownloader():
             file.close()
             print("Done!")
 
-    def prompt_for_download(self):
-        """
-        Prompts for the user before downloading of the paper
-        """
-        print(f"The paper title is: {self.full_title}\n")
-        print(f"The paper author(s) are: {self.full_authors}\n")
-
-        download_ans = self.input_with_default("Would you life to download this paper? (Y/n): ", "y")
-        
-        if self.download_link == "nan":
-            download_src_ans = self.input_with_default("Would you life to download the source for this paper? (y/N): ", "n")
-        else:
-            download_src_ans = 'n'
-        
-        if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
-            print("No download will happen. Exiting...")
-            label = "NaN"
-        else:
-            label = input("What would be the paper's label? (leave empty for default): ")
-            if label == "":
-                label = self.default_label
-    
-        self.download_ans = download_ans.lower()
-        self.download_src_ans = download_src_ans.lower()
-        self.label = label
-
-    def append_bibtex(self):
-        """
-        Appends bibtex entry to the bibliography file,
-        as well as this paper's string to csv file
-        """
-    
-        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\",\"{self.download_link}\""
-    
-        csv_file = open(self.citerius.csv_file, "a")
-        csv_file.write(csv_str)
-        csv_file.close()
-    
-        bib_file = open(self.citerius.bibtex_file, "a")
-        bib_file.write(self.citation_str)
-        bib_file.close()
-
     def download_paper_from_link(self):
         """
         Downloads the paper from a provided link, not from arxiv
         """
         urlretrieve(self.download_link, self.download_path)
+
+# MAIN CALL
 
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
@@ -346,4 +379,3 @@ if __name__ == "__main__":
     arxiv_id = input("Arxiv paper id / Download link: ")
     paper_download = PaperDownloader(ref_dir, arxiv_id)
     paper_download.download_paper_with_user_input()
-    #paper_download.download_paper_from_link(link)
