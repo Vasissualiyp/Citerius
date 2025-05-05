@@ -121,3 +121,20 @@ class CiteriusUtils():
     
         # Replace the original file with the temporary file
         os.replace(temp_filename, filename)
+
+    def check_if_string_is_arxiv_id(string):
+        """
+        Checks if the passed string is in arxiv id format.
+        Sets up arxiv_id and download_link variables.
+        Returns:
+            arxiv_id, download_link: a tuple of strings as they should
+            be set in PaperDownloader class (i.e. one of them should be 'nan')
+        """
+        pattern = r'^(\d{4}\.\d{4,5}(v\d+)?|\d{7}(v\d+)?)$'
+        if re.match(pattern, string) == None:
+            arxiv_id = "nan"
+            download_link = string
+        else:
+            download_link = "nan"
+            arxiv_id = string
+        return arxiv_id, download_link

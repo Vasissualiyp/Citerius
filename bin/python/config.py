@@ -28,6 +28,12 @@ class CiteriusConfig():
         """
         self.df = pd.read_csv(self.csv_file)
         self.df_columns = self.df.columns.tolist()
+
+        # Remove columns that provide no useful info for fzf
+        irrelevant_columns = [ "Download_pdf", "Download_link", "Download_src" ]
+        for col in irrelevant_columns:
+            self.df_columns.remove(col)
+
         self.df_loaded = True
 
     def fuzzy_find_label(self):

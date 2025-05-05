@@ -10,23 +10,30 @@ import arxiv
 import tarfile
 
 class PaperDownloader():
-    def __init__(self, ref_dir: str, arxiv_id: str):
+
+    def __init__(self, ref_dir: str, arxiv_id: str, first_time_download = True):
         """
         Class to set up and download the paper from its arxiv id.
         Args:
             ref_dir (str): directory with all the references' data
-            arxiv_id (str): id of paper on arxv to download
+            arxiv_id (str): id of paper on arxv to download, or download link
+            first_time_download (bool): whether we're downloading a paper that 
+            was in the database before
         """
 
         self.citerius = CiteriusConfig(ref_dir)
         self.cutils = CiteriusUtils()
-        self.check_if_string_is_arxiv_id(arxiv_id)
+        self.first_time_download = first_time_download
+        self.arxiv_id, self.download_link = self.cutils.check_if_string_is_arxiv_id(arxiv_id)
 
-        if self.download_link == 'nan': # Arxiv paper
-            self.citation_str = self.cutils.get_citation_from_arxiv_id(self.arxiv_id)
-        else: # Paper with link to download
-            editor = "vim"
-            self.get_citation_from_tmpfile(editor)
+        if self.first_time_download:
+            if self.download_link == 'nan': # Arxiv paper
+                self.citation_str = self.cutils.get_citation_from_arxiv_id(self.arxiv_id)
+            else: # Paper with link to download
+                editor = "vim"
+                self.get_citation_from_tmpfile(editor)
+        else:
+            self.citerius
 
         if self.citation_str == None:
             print("There was an error when obtaining citation string")
@@ -34,20 +41,7 @@ class PaperDownloader():
 
         self.get_arxiv_paper_info()
         
-    # Utility functions
-
-    def check_if_string_is_arxiv_id(self, string):
-        """
-        Checks if the passed string is in arxiv id format.
-        Sets up arxiv_id and download_link variables.
-        """
-        pattern = r'^(\d{4}\.\d{4,5}(v\d+)?|\d{7}(v\d+)?)$'
-        if re.match(pattern, string) == None:
-            self.arxiv_id = "nan"
-            self.download_link = string
-        else:
-            self.download_link = "nan"
-            self.arxiv_id = string
+    # Working with bib data
 
     def replace_label_for_citation(self):
         """
@@ -61,7 +55,7 @@ class PaperDownloader():
 
     def get_arxiv_paper_info(self):
         """
-        Obtains a bunch of paper information from aixiv id
+        Obtains a bunch of paper information from citation string, obtained before
         """
     
         concat_string = " and " 
@@ -126,7 +120,7 @@ class PaperDownloader():
         """
         try:
             os.mkdir(self.download_dir)
-            self.append_bibtex()
+            if self.first_time_download: self.append_bibtex()
         except:
             print(f"There is already a paper with the label {self.label}")
             if self.download_src_ans == 'y':
@@ -310,13 +304,17 @@ class PaperDownloader():
             file = tarfile.open(self.download_src_path)
             file.extractall(self.download_src_dir)
             file.close()
+            os.remove(self.download_src_path)
             print("Done!")
 
     def download_paper_from_link(self):
         """
         Downloads the paper from a provided link, not from arxiv
         """
-        urlretrieve(self.download_link, self.download_path)
+        if (self.download_ans == 'y'):
+            print(f"Will start downloading the paper {self.label}")
+            urlretrieve(self.download_link, self.download_path)
+            print("Done!")
 
 # MAIN CALL
 

@@ -15,7 +15,7 @@
             allowUnfree = true;
           };
         };
-        pybibget_pkg = pkgs.python311Packages.buildPythonPackage rec {
+        pybibget_pkg = pkgs.python312Packages.buildPythonPackage rec {
           pname = "pybibget";
           version = "0.1.0";
 
@@ -23,7 +23,7 @@
             inherit pname version;
             hash = "sha256-M6CIctTOVn7kIPmsoHQmYl2wQaUzfel7ryw/3ebQitg=";
           };
-          propagatedBuildInputs = with pkgs.python311Packages; [ 
+          propagatedBuildInputs = with pkgs.python312Packages; [ 
             lxml
             httpx
             appdirs
@@ -38,7 +38,6 @@
         python = pkgs.python312Packages.python;
         pythonEnv = python.withPackages (ps: with ps; [
           pandas
-          matplotlib
           numpy
           pyfzf
           arxiv
