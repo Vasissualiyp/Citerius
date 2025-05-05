@@ -154,6 +154,7 @@ class PaperDownloader():
         if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
             print("No download will happen. Exiting...")
             label = "nan"
+            exit(0)
         else:
             label = input("What would be the paper's label? (leave empty for default): ")
             if label == "":
@@ -282,6 +283,7 @@ class PaperDownloader():
             print("Unknown situation with arxiv_id and download_link both not being nan.")
             print(f"arxiv_id: {self.arxiv_id}")
             print(f"download_link: {self.download_link}")
+            exit(1)
 
     def download_arxiv_paper(self):
         """
