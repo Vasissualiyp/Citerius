@@ -121,4 +121,3 @@ class CiteriusUtils():
     
         # Replace the original file with the temporary file
         os.replace(temp_filename, filename)
-    

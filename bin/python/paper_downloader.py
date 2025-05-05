@@ -28,6 +28,10 @@ class PaperDownloader():
             editor = "vim"
             self.get_citation_from_tmpfile(editor)
 
+        if self.citation_str == None:
+            print("There was an error when obtaining citation string")
+            exit(1)
+
         self.get_arxiv_paper_info()
         
     # Utility functions
@@ -227,6 +231,8 @@ class PaperDownloader():
         ]
         content_nocomments = '\n'.join(lines)
         self.citation_str = content_nocomments
+        if self.citation_str == "":
+            self.citation_str = None
         
     # Main download externally-called funcitons
 
