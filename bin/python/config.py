@@ -1,69 +1,10 @@
 import pandas as pd
 from pyfzf import FzfPrompt
-import tempfile
+from utils import CiteriusUtils
 import shutil
 import os
 import sys
 import re
-
-def find_bibtex_entry(content, label):
-    """
-    Obtains bibtex entry from a list of lines, corresponding to bibtex file
-    Args:
-        content (list of str): bibtex file, separated into list of lines
-        (how it's being read by readlines())
-        label (str): label of entry of interest
-
-    Returns:
-        str: multiline string, bibtex entry for label of interest. 
-        returns None if bibtex entry for given label wasn't found.
-    """
-    # Escape special characters in the label to prevent regex issues
-    escaped_label = re.escape(label)
-    # Construct the regex pattern
-    pattern = r'@[a-z]+\{%s\s*,.*?^\s*\}' % escaped_label
-    # Compile with flags to handle multiline entries
-    regex = re.compile(pattern, flags=re.DOTALL | re.MULTILINE)
-    # Search for the pattern in the content
-    content_str = ""
-    for line in content:
-        content_str += line
-    match = regex.search(content_str)
-    return match.group(0) if match else None
-
-def remove_multiline_block(file_path, start_pattern, end_pattern):
-    # Create a temporary file in the SAME DIRECTORY as the original file
-    file_dir = os.path.dirname(file_path)
-    with tempfile.NamedTemporaryFile(
-        mode='w', 
-        delete=False,
-        dir=file_dir  # Critical: Create temp file in same directory/device
-    ) as temp_file:
-        with open(file_path, 'r') as original_file:
-            in_block = False
-            for line in original_file:
-                if re.match(start_pattern, line):
-                    in_block = True
-                if not in_block:
-                    temp_file.write(line)
-                if in_block and re.search(end_pattern, line):
-                    in_block = False
-
-    # Replace the original file (now guaranteed to be on same device)
-    os.replace(temp_file.name, file_path)
-
-def remove_ith_line(filename, i):
-    temp_filename = f"{filename}.tmp"
-    line_count = 0
-
-    with open(filename, 'r') as infile, open(temp_filename, 'w') as outfile:
-        for line in infile:
-            if line_count != i:
-                outfile.write(line)
-            line_count += 1
-
-    # Replace the original file with the temporary file
-    os.replace(temp_filename, filename)
 
 class CiteriusConfig():
     def __init__(self, ref_dir: str):
@@ -76,6 +17,8 @@ class CiteriusConfig():
         self.parent_dir = ref_dir
         self.csv_file = os.path.join(ref_dir, 'papers.csv')
         self.bibtex_file = os.path.join(ref_dir, 'bibliography.bib')
+
+        self.cutils = CiteriusUtils()
         self.df_loaded = False
 
     def load_df(self):
@@ -122,13 +65,13 @@ class CiteriusConfig():
         label_idx = labels_column.index(label)
         
         # Remove csv entry
-        remove_ith_line(self.csv_file, label_idx + 1)
+        self.cutils.remove_ith_line(self.csv_file, label_idx + 1)
 
         # Remove bibtex entry
         escaped_label = re.escape(label)
         start_pattern = re.compile(r'^@[a-z]+\{%s\s*,' % escaped_label)  # Match "@article{<label>,"
         end_pattern = re.compile(r'^\s*}\s*$\s*$')  # Match a line with only "}"
-        remove_multiline_block(self.bibtex_file, start_pattern, end_pattern)
+        self.cutils.remove_multiline_block(self.bibtex_file, start_pattern, end_pattern)
         
         # Remove directory with paper pdf and its src if needed
         paper_dir = os.path.join(self.parent_dir, label)

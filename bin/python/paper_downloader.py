@@ -1,74 +1,13 @@
-import pybibget as pbg
 import pybtex as pbt
 from config import CiteriusConfig
 from pathlib import Path
 from urllib.request import urlretrieve
+from utils import CiteriusUtils
 import os
 import re
 import sys
-import asyncio
 import arxiv
 import tarfile
-import tempfile
-import subprocess
-
-class CiteriusUtils():
-    def get_user_input_via_editor(self, initial_content="", editor=None):
-        # Determine the editor to use (defaults to vim or $EDITOR environment variable)
-        if editor is None:
-            editor = os.environ.get('EDITOR', 'vim')
-        
-        # Create a temporary file with a recognizable suffix
-        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w', delete=False) as tf:
-            temp_filename = tf.name
-            tf.write(initial_content)
-        
-        try:
-            # Launch the editor and wait for it to close
-            subprocess.run([editor, temp_filename], check=True)
-            
-            # Read the contents of the temporary file
-            with open(temp_filename, 'r') as f:
-                content = f.read()
-        except subprocess.CalledProcessError as e:
-            print(f"Editor error: {e}")
-            return None
-        except Exception as e:
-            print(f"Error: {e}")
-            return None
-        finally:
-            # Clean up the temporary file
-            os.unlink(temp_filename)
-        
-        return content
-    
-    def get_citation_from_arxiv_id(self, arxiv_addr):
-        """
-        Takes in paper arxiv id, returns string with bibget citation
-        """
-        
-        keys = [arxiv_addr]
-        
-        bibget = pbg.Bibget(mathscinet=True)
-        bib_data = asyncio.run(bibget.citations(keys))
-        number_of_entries = len(bib_data.entries)
-        bib_data = bib_data.to_string('bibtex')
-    
-        return bib_data
-    
-    def obtain_label_from_bibentry(self, bib_entry):
-        """
-        Obtains label for bibliographic entry from string with .bib entry
-        """
-        # Process each line to find the label
-        for line in bib_entry.splitlines():
-            stripped_line = line.strip()
-            if stripped_line.startswith('@'):
-                # Match the pattern: @<entry_type>{<label>
-                match = re.match(r'@([a-z]+)\s*{\s*([^,]+)', stripped_line)
-                if match:
-                    label = match.group(2)
-                    return label
 
 class PaperDownloader():
     def __init__(self, ref_dir: str, arxiv_id: str):
@@ -214,7 +153,7 @@ class PaperDownloader():
         
         if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
             print("No download will happen. Exiting...")
-            label = "NaN"
+            label = "nan"
         else:
             label = input("What would be the paper's label? (leave empty for default): ")
             if label == "":
