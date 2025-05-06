@@ -122,7 +122,7 @@ class CiteriusUtils():
         # Replace the original file with the temporary file
         os.replace(temp_filename, filename)
 
-    def check_if_string_is_arxiv_id(string):
+    def check_if_string_is_arxiv_id(self, string):
         """
         Checks if the passed string is in arxiv id format.
         Sets up arxiv_id and download_link variables.
