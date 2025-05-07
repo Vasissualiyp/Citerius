@@ -103,7 +103,7 @@ class PaperDownloader():
         as well as this paper's string to csv file
         """
     
-        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\",\"{self.download_link}\""
+        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\",\"{self.download_link}\"\n"
     
         csv_file = open(self.citerius.csv_file, "a")
         csv_file.write(csv_str)
@@ -316,11 +316,29 @@ class PaperDownloader():
             urlretrieve(self.download_link, self.download_path)
             print("Done!")
 
+def download_from_file(ref_dir, file_path):
+    """
+    Downloads papers from file
+    """
+    # Get a list of papers from the file
+    file = open(file_path, 'r')
+    arxiv_ids = []
+    for line in file:
+        arxiv_ids.append(line.strip())
+    file.close()
+
+    for arxiv_id in arxiv_ids:
+        paper_download = PaperDownloader(ref_dir, arxiv_id)
+        paper_download.download_paper_without_user_input('y','n',"",'n')
+
 # MAIN CALL
 
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
     ref_dir = "/home/vasilii/research/references"
-    arxiv_id = input("Arxiv paper id / Download link: ")
-    paper_download = PaperDownloader(ref_dir, arxiv_id)
-    paper_download.download_paper_with_user_input()
+    arxiv_id = input("Arxiv paper id / Download link / File path: ")
+    if os.path.isfile(arxiv_id):
+        download_from_file(ref_dir, arxiv_id)
+    else:
+        paper_download = PaperDownloader(ref_dir, arxiv_id)
+        paper_download.download_paper_with_user_input()
