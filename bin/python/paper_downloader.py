@@ -11,12 +11,15 @@ import tarfile
 
 class PaperDownloader():
 
-    def __init__(self, ref_dir: str, arxiv_id: str, first_time_download = True):
+    def __init__(self, ref_dir: str, download_id: str, first_time_download = True):
         """
         Class to set up and download the paper from its arxiv id.
         Args:
             ref_dir (str): directory with all the references' data
-            arxiv_id (str): id of paper on arxv to download, or download link
+            download_id (str): 
+                id of paper on arxv to download, OR
+                download link, OR
+                label for paper to be downloaded via Citerius dataframe
             first_time_download (bool): whether we're downloading a paper that 
             was in the database before
         """
@@ -24,24 +27,36 @@ class PaperDownloader():
         self.citerius = CiteriusConfig(ref_dir)
         self.cutils = CiteriusUtils()
         self.first_time_download = first_time_download
-        self.arxiv_id, self.download_link = self.cutils.check_if_string_is_arxiv_id(arxiv_id)
 
         if self.first_time_download:
+            self.arxiv_id, self.download_link = self.cutils.check_if_string_is_arxiv_id(download_id)
             if self.download_link == 'nan': # Arxiv paper
                 self.citation_str = self.cutils.get_citation_from_arxiv_id(self.arxiv_id)
             else: # Paper with link to download
                 editor = "vim"
                 self.get_citation_from_tmpfile(editor)
+            self.get_arxiv_paper_info()
+
         else:
-            self.citerius
+            self.get_paper_info_from_citerius_df(download_id)
 
-        if self.citation_str == None:
-            print("There was an error when obtaining citation string")
-            exit(1)
+    def get_paper_info_from_citerius_df(self, label):
 
-        self.get_arxiv_paper_info()
-        
-    # Working with bib data
+        # Obtain database entry, related to paper
+        self.citerius.load_df()
+        df_row = self.citerius.df[self.citerius.df.Label == label]
+        if df_row.empty:
+            raise ValueError(f"No label {label} found in the dataframe!")
+
+        self.full_authors     = df_row.Author.iloc[0]
+        self.full_title       = df_row.Title.iloc[0]
+        self.year             = df_row.Year.iloc[0]
+        self.arxiv_id         = str(df_row["ArXiv Number"].iloc[0])
+        self.default_label    = df_row.Label.iloc[0]
+        self.label            = df_row.Label.iloc[0]
+        self.download_ans     = df_row.Download_pdf.iloc[0]
+        self.download_src_ans = df_row.Download_src.iloc[0]
+        self.download_link    = df_row.Download_link.iloc[0]
 
     def replace_label_for_citation(self):
         """
@@ -59,6 +74,10 @@ class PaperDownloader():
         """
     
         concat_string = " and " 
+
+        if self.citation_str == None:
+            print("There was an error when obtaining citation string")
+            exit(1)
         
         # Extract bibliography data from citation string
         bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[self.arxiv_id]
@@ -267,18 +286,28 @@ class PaperDownloader():
         if overwrite == 'n' and Path(self.download_path).exists(): self.download_ans = 'n'
         self.download_paper_general()
 
+    def download_paper_from_citerius_df(self):
+        """
+        Downloads paper from its info in citerius dataframe
+        """
+        if self.first_time_download:
+            raise ValueError(f"In order to download from Citerius dataframe, please set up PaperDownloader class with first_time_download=False!")
+        self.setup_download_paths()
+        self.create_dirs()
+        if Path(self.download_path).exists(): 
+            self.download_ans = 'n'
+        self.download_paper_general()
+
     # Download from sources
 
     def download_paper_general(self):
         """
         General function to identify the method for paper download and download the paper itself
         """
-        if self.download_link == 'nan':
+        if str(self.download_link).lower() == 'nan':
             self.download_arxiv_paper()
-            print("The paper was downloaded successfully!")
-        elif self.arxiv_id == 'nan':
+        elif str(self.arxiv_id).lower() == 'nan':
             self.download_paper_from_link()
-            print("The paper was downloaded successfully!")
         else:
             print("Unknown situation with arxiv_id and download_link both not being nan.")
             print(f"arxiv_id: {self.arxiv_id}")
@@ -289,7 +318,8 @@ class PaperDownloader():
         """
         Downloads paper or its source from arxiv
         """
-        paper = next(arxiv.Client().results(arxiv.Search(id_list=[self.arxiv_id])))
+        if (self.download_ans == 'y') or (self.download_src_ans == 'y'):
+            paper = next(arxiv.Client().results(arxiv.Search(id_list=[self.arxiv_id])))
         
         if (self.download_ans == 'y'):
             print(f"Will start downloading the paper {self.label}")
@@ -316,20 +346,57 @@ class PaperDownloader():
             urlretrieve(self.download_link, self.download_path)
             print("Done!")
 
-def download_from_file(ref_dir, file_path):
-    """
-    Downloads papers from file
-    """
-    # Get a list of papers from the file
-    file = open(file_path, 'r')
-    arxiv_ids = []
-    for line in file:
-        arxiv_ids.append(line.strip())
-    file.close()
+class BulkDownloader():
+    def __init__(self, ref_dir: str, download_mode="new"):
+        """
+        Download a bunch of papers at once
+        Args:
+            ref_dir (str): directory with all the references' data
+            download_mode (str): how the papers will be downloaded
+        """
+        self.ref_dir = ref_dir
 
-    for arxiv_id in arxiv_ids:
-        paper_download = PaperDownloader(ref_dir, arxiv_id)
-        paper_download.download_paper_without_user_input('y','n',"",'n')
+        if download_mode == "new":
+            self.download_params = ['y', 'n', "", 'n']
+        elif download_mode == "old":
+            self.download_params = ['y', 'n', "", 'n']
+        else:
+            raise ValueError(f"Unknown value for download_mode: {download_mode}")
+
+    def download_from_list(self, list, first_time_download=True):
+        """
+        Download papers from python list, either with Citerius, or with 
+        general download without user intervention
+        """
+        for download_id in list:
+            paper_download = PaperDownloader(self.ref_dir, download_id, first_time_download)
+            if first_time_download:
+                paper_download.download_paper_without_user_input(*self.download_params)
+            else:
+                paper_download.download_paper_from_citerius_df()
+
+    def download_from_citerius(self):
+        """
+        Downloads all papers from Citerius dataframe
+        """
+        citerius = CiteriusConfig(self.ref_dir)
+        citerius.load_df()
+        labels_list = citerius.df.Label.tolist()
+        self.download_from_list(labels_list, first_time_download=False)
+
+    def download_from_file(self, file_path):
+        """
+        Downloads papers from file
+        """
+        # Get a list of papers from the file
+        file = open(file_path, 'r')
+        arxiv_ids = []
+        for line in file:
+            arxiv_ids.append(line.strip())
+        file.close()
+
+        self.download_from_list(arxiv_ids)
+    
 
 # MAIN CALL
 
@@ -338,7 +405,10 @@ if __name__ == "__main__":
     ref_dir = "/home/vasilii/research/references"
     arxiv_id = input("Arxiv paper id / Download link / File path: ")
     if os.path.isfile(arxiv_id):
-        download_from_file(ref_dir, arxiv_id)
+        bulk_download = BulkDownloader(ref_dir)
+        bulk_download.download_from_file(arxiv_id)
     else:
         paper_download = PaperDownloader(ref_dir, arxiv_id)
         paper_download.download_paper_with_user_input()
+    #bulk_download = BulkDownloader(ref_dir)
+    #bulk_download.download_from_citerius()

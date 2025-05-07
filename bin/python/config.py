@@ -67,7 +67,7 @@ class CiteriusConfig():
         Removes mentions of paper of provided label from csv, bib files, 
         as well as its directory
         """
-        labels_column = self.df['Label'].tolist()
+        labels_column = self.df.Label.tolist()
         label_idx = labels_column.index(label)
         
         # Remove csv entry
