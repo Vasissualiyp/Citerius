@@ -41,6 +41,7 @@
           numpy
           pyfzf
           arxiv
+		  gitpython
           pybtex
           pybibget_pkg
         ]);

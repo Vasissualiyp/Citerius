@@ -1,25 +1,47 @@
 import pandas as pd
 from pyfzf import FzfPrompt
+from pathlib import Path
 from utils import CiteriusUtils
+from git import Repo, Actor
 import shutil
 import os
 import sys
 import re
+import json
 
 class CiteriusConfig():
-    def __init__(self, ref_dir: str):
+    def __init__(self, config_file=None):
         """
         Citerius config class. 
         Args:
-            ref_dir (str): path to directory with references
+            config_file (str): path to json config file 
+                (if None, then the default value is $HOME/user/.config/citerius/config.json)
         """
-        # Set up paths
-        self.parent_dir = ref_dir
-        self.csv_file = os.path.join(ref_dir, 'papers.csv')
-        self.bibtex_file = os.path.join(ref_dir, 'bibliography.bib')
-
+        if config_file==None:
+            self.config_file = os.path.join(Path.home(), ".config/citerius/config.json")
+        else:
+            self.config_file = config_file
+        self.extract_data_from_config_file()
         self.cutils = CiteriusUtils()
         self.df_loaded = False
+
+    def extract_data_from_config_file(self):
+        """
+        Extract json data from config file and assign corresponding variables 
+        in this class.
+        """
+        with open(self.config_file) as f:
+            json_str = f.read()
+        config = json.loads(json_str)
+
+        self.parent_dir = config["references_dir"]
+        author_name = config["author_name"]
+        author_email = config["author_email"]
+
+        self.csv_file = os.path.join(self.parent_dir, 'papers.csv')
+        self.bibtex_file = os.path.join(self.parent_dir, 'bibliography.bib')
+        self.repo = Repo(self.parent_dir)
+        self.author = Actor(author_name, author_email)
 
     def load_df(self):
         """
@@ -86,11 +108,19 @@ class CiteriusConfig():
         except:
             print("Directory with the paper's pdf doesn't exist")
 
+    def git_update_files(self, commit_message: str):
+        """
+        Updates all necessary files and commits with a provided message
+        """
+        index = self.repo.index
+        index.add([self.csv_file, self.bibtex_file])
+        index.add([self.csv_file, self.bibtex_file])
+        index.commit(commit_message, author=self.author, committer=self.author)
 
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
-    ref_dir = "/home/vasilii/research/references"
-    citerius = CiteriusConfig(ref_dir)
+    config_file = None # default location for the config file
+    citerius = CiteriusConfig(config_file)
     label = citerius.fuzzy_find_label()
     print(label)
     #citerius.remove_paper(label)

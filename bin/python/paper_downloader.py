@@ -11,11 +11,12 @@ import tarfile
 
 class PaperDownloader():
 
-    def __init__(self, ref_dir: str, download_id: str, first_time_download = True):
+    def __init__(self, config_file, download_id: str, first_time_download = True):
         """
         Class to set up and download the paper from its arxiv id.
         Args:
-            ref_dir (str): directory with all the references' data
+            config_file (str): path to json config file 
+                (if None, then the default value is $HOME/user/.config/citerius/config.json)
             download_id (str): 
                 id of paper on arxv to download, OR
                 download link, OR
@@ -24,7 +25,7 @@ class PaperDownloader():
             was in the database before
         """
 
-        self.citerius = CiteriusConfig(ref_dir)
+        self.citerius = CiteriusConfig(config_file)
         self.cutils = CiteriusUtils()
         self.first_time_download = first_time_download
 
@@ -347,14 +348,16 @@ class PaperDownloader():
             print("Done!")
 
 class BulkDownloader():
-    def __init__(self, ref_dir: str, download_mode="new"):
+    def __init__(self, config_file=None, download_mode="new"):
         """
         Download a bunch of papers at once
         Args:
-            ref_dir (str): directory with all the references' data
+            config_file (str): path to json config file 
+                (if None, then the default value is $HOME/user/.config/citerius/config.json)
             download_mode (str): how the papers will be downloaded
         """
-        self.ref_dir = ref_dir
+        self.citerius = CiteriusConfig(config_file)
+        self.ref_dir = self.citerius.parent_dir
 
         if download_mode == "new":
             self.download_params = ['y', 'n', "", 'n']
@@ -379,9 +382,8 @@ class BulkDownloader():
         """
         Downloads all papers from Citerius dataframe
         """
-        citerius = CiteriusConfig(self.ref_dir)
-        citerius.load_df()
-        labels_list = citerius.df.Label.tolist()
+        self.citerius.load_df()
+        labels_list = self.citerius.df.Label.tolist()
         self.download_from_list(labels_list, first_time_download=False)
 
     def download_from_file(self, file_path):
@@ -402,13 +404,13 @@ class BulkDownloader():
 
 if __name__ == "__main__":
     #ref_dir = sys.argv[1]
-    ref_dir = "/home/vasilii/research/references"
     arxiv_id = input("Arxiv paper id / Download link / File path: ")
+    config_file = None # default location for the config file
     if os.path.isfile(arxiv_id):
-        bulk_download = BulkDownloader(ref_dir)
+        bulk_download = BulkDownloader(config_file)
         bulk_download.download_from_file(arxiv_id)
     else:
-        paper_download = PaperDownloader(ref_dir, arxiv_id)
+        paper_download = PaperDownloader(config_file, arxiv_id)
         paper_download.download_paper_with_user_input()
     #bulk_download = BulkDownloader(ref_dir)
     #bulk_download.download_from_citerius()
