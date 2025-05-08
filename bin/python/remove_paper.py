@@ -9,5 +9,6 @@ if __name__ == "__main__":
     answer = input(f"You are about to remove paper with label {label}. Are you sure? (y/N): ")
     if answer.lower() == 'y':
         citerius.remove_paper(label)
+        citerius.repo.close()
     else:
         print(f"You answered '{answer}'. The paper will not be removed.")

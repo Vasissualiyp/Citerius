@@ -431,8 +431,10 @@ if __name__ == "__main__":
     if os.path.isfile(arxiv_id):
         bulk_download = BulkDownloader(config_file)
         bulk_download.download_from_file(arxiv_id)
+        bulk_download.citerius.repo.close()
     else:
         paper_download = PaperDownloader(config_file, arxiv_id)
         paper_download.download_paper_with_user_input()
+        paper_download.citerius.repo.close()
     #bulk_download = BulkDownloader(ref_dir)
     #bulk_download.download_from_citerius()
