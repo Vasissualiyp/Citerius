@@ -107,6 +107,8 @@ class CiteriusConfig():
             shutil.rmtree(paper_dir)
         except:
             print("Directory with the paper's pdf doesn't exist")
+        commit_message = f"Removed paper with label {label}"
+        self.git_update_files(commit_message)
 
     def git_update_files(self, commit_message: str):
         """

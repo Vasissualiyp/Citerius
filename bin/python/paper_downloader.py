@@ -11,7 +11,10 @@ import tarfile
 
 class PaperDownloader():
 
-    def __init__(self, config_file, download_id: str, first_time_download = True):
+    def __init__(self, config_file, 
+                 download_id: str, 
+                 first_time_download = True, 
+                 no_commits = False):
         """
         Class to set up and download the paper from its arxiv id.
         Args:
@@ -22,12 +25,15 @@ class PaperDownloader():
                 download link, OR
                 label for paper to be downloaded via Citerius dataframe
             first_time_download (bool): whether we're downloading a paper that 
-            was in the database before
+                was in the database before
+            no_commits (bool): set to true if don't want to commit changes 
+                (in case downloading in bulk, for instance)
         """
 
         self.citerius = CiteriusConfig(config_file)
         self.cutils = CiteriusUtils()
         self.first_time_download = first_time_download
+        self.no_commits = no_commits
 
         if self.first_time_download:
             self.arxiv_id, self.download_link = self.cutils.check_if_string_is_arxiv_id(download_id)
@@ -309,11 +315,18 @@ class PaperDownloader():
             self.download_arxiv_paper()
         elif str(self.arxiv_id).lower() == 'nan':
             self.download_paper_from_link()
+        elif (self.download_ans == 'n' and self.download_src_ans == 'n'):
+            print(f"The paper {self.label} is a part of git repository, thus doesn't require download")
+            return
         else:
             print("Unknown situation with arxiv_id and download_link both not being nan.")
             print(f"arxiv_id: {self.arxiv_id}")
             print(f"download_link: {self.download_link}")
             exit(1)
+
+        if self.first_time_download and not self.no_commits:
+            commit_message = f"Added paper with label {self.label}"
+            self.citerius.git_update_files(commit_message)
 
     def download_arxiv_paper(self):
         """
@@ -371,12 +384,21 @@ class BulkDownloader():
         Download papers from python list, either with Citerius, or with 
         general download without user intervention
         """
+        concat_string = ", "
+        labels_str = ""
         for download_id in list:
-            paper_download = PaperDownloader(self.ref_dir, download_id, first_time_download)
+            paper_download = PaperDownloader(self.ref_dir, download_id, 
+                                             first_time_download, no_commits=True)
             if first_time_download:
                 paper_download.download_paper_without_user_input(*self.download_params)
+                labels_str+= concat_string + paper_download.label
             else:
                 paper_download.download_paper_from_citerius_df()
+
+        if first_time_download:
+            labels_str = labels_str[len(concat_string):]
+            commit_message = f"Added papers with labels: {labels_str}"
+            self.citerius.git_update_files(commit_message)
 
     def download_from_citerius(self):
         """
