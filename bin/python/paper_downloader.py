@@ -371,6 +371,7 @@ class BulkDownloader():
         """
         self.citerius = CiteriusConfig(config_file)
         self.ref_dir = self.citerius.parent_dir
+        self.config_file = config_file
 
         if download_mode == "new":
             self.download_params = ['y', 'n', "", 'n']
@@ -387,7 +388,7 @@ class BulkDownloader():
         concat_string = ", "
         labels_str = ""
         for download_id in list:
-            paper_download = PaperDownloader(self.ref_dir, download_id, 
+            paper_download = PaperDownloader(self.config_file, download_id, 
                                              first_time_download, no_commits=True)
             if first_time_download:
                 paper_download.download_paper_without_user_input(*self.download_params)
