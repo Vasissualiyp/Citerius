@@ -58,7 +58,7 @@ class CiteriusConfig():
 
         self.df_loaded = True
 
-    def fuzzy_find_label(self):
+    def fuzzy_find_label(self): 
         """
         Performs fuzzy find over the database of all the papers,
         and returns the label of the requested paper
