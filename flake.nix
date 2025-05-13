@@ -41,6 +41,8 @@
           numpy
           pyfzf
           arxiv
+		  readchar
+		  rich
 		  gitpython
           pybtex
           pybibget_pkg
