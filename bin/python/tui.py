@@ -28,9 +28,7 @@ class CiteriusTUI:
         # Keybindings
         self.BINDINGS = {
             'j': partial(self._move_selection, 1),
-            'up': partial(self._move_selection, 1),
             'k': partial(self._move_selection, -1),
-            'down': partial(self._move_selection, -1),
             '\r': self._execute_selection,  # Enter key
             '\n': self._execute_selection,  # Alternate Enter key
             'q': self._exit,
@@ -131,7 +129,6 @@ class CiteriusTUI:
 
     def _set_status(self, message: str):
         self.status_message = message
-        self._create_status_bar
 
     def _clear_status(self):
         self.status_message = ""
@@ -144,14 +141,14 @@ class CiteriusTUI:
                 
                 if key in self.BINDINGS:
                     self.BINDINGS[key]()
-                elif key == '\x1b':  # Escape character
-                    key += readkey()  # Read [
-                    key += readkey()  # Read actual arrow key character
-                    
-                    if key == '\x1b[A':  # Up arrow
-                        self._move_selection(-1)
-                    elif key == '\x1b[B':  # Down arrow
-                        self._move_selection(1)
+                #elif key == '\x1b':  # Escape character
+                #    key += readkey()  # Read [
+                #    key += readkey()  # Read actual arrow key character
+                #    
+                #    if key == '\x1b[A':  # Up arrow
+                #        self._move_selection(-1)
+                #    elif key == '\x1b[B':  # Down arrow
+                #        self._move_selection(1)
                 
                 # Auto-clear status messages after delay
                 if self.status_message and "..." in self.status_message:
