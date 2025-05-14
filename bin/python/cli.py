@@ -1,4 +1,4 @@
-import argparse
+import argparse, os
 from paper_downloader import PaperDownloader, BulkDownloader
 from config import CiteriusConfig, CiteriusUtils
 
@@ -8,15 +8,17 @@ class CiteriusParser():
         self.parse_args()
         self.avoid_multiple_definitions()
 
+        # Get fuzzy-finding out of the way
+        if self.args.fzf:
+            self.get_fzf_label()
+
         # Do whatever action user asked for
         if self.args.download: self.download()
         elif self.args.remove: self.remove()
         elif self.args.fzf: 
-            self.get_fzf_label()
             print(self.args.label)
         else:
             print(f"No action or --fzf was specified")
-        print(self.args)
 
     def parse_args(self):
         """Parse all the CLI arguments"""
@@ -70,13 +72,73 @@ class CiteriusParser():
                     raise ValueError(error_string)
 
     def download(self):
-        pass
+        bulk_download_flag = False
+
+        if self.args.label:
+            raise NotImplementedError
+        elif self.args.auto:
+            arxiv_id = self.args.auto
+        elif self.args.arxiv:
+            arxiv_id = self.args.arxiv
+        elif self.args.link:
+            arxiv_id = self.args.link
+        elif self.args.pdf:
+            raise NotImplementedError
+        elif self.args.file:
+            arxiv_id = self.args.file
+            bulk_download_flag = True
+        else:
+            arxiv_id = input("Arxiv paper id / Download link / File path: ")
+            if os.path.isfile(arxiv_id):
+                bulk_download_flag = True
+
+        if bulk_download_flag:
+            bulk_download = BulkDownloader(self.args.config)
+            bulk_download.download_from_file(arxiv_id)
+            bulk_download.citerius.repo.close()
+        else:
+            paper_download = PaperDownloader(self.args.config, arxiv_id)
+            if self.args.no_confirm: paper_download.download_paper_without_user_input()
+            else: paper_download.download_paper_with_user_input()
+            paper_download.citerius.repo.close()
 
     def remove(self):
-        pass
+        citerius = CiteriusConfig(self.args.config)
+
+        # Get label of the paper
+        if self.args.label:
+            label = self.args.label
+            id_string = f"label {label}"
+        elif self.args.auto:
+            raise NotImplementedError
+        elif self.args.arxiv:
+            raise NotImplementedError
+        elif self.args.link:
+            raise NotImplementedError
+        elif self.args.pdf:
+            raise NotImplementedError
+        elif self.args.file:
+            raise NotImplementedError
+        else:
+            raise ValueError(f"Target for removal not specified")
+
+        # Prompt the user if the paper really needs to be deleted
+        if self.args.no_confirm:
+            answer = 'y'
+        else:
+            answer = input(f"You are about to remove paper with {id_string}. Are you sure? (y/N): ")
+
+        # Delete the paper
+        if answer.lower() == 'y':
+            citerius.remove_paper(label)
+            citerius.repo.close()
+        else:
+            print(f"You answered '{answer}'. The paper will not be removed.")
+
 
     def get_fzf_label(self):
-        pass
+        citerius = CiteriusConfig(self.args.config)
+        self.args.label = citerius.fuzzy_find_label()
 
 if __name__ == "__main__":
     parser = CiteriusParser()
