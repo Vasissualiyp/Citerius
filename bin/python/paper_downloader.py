@@ -421,21 +421,3 @@ class BulkDownloader():
         file.close()
 
         self.download_from_list(arxiv_ids)
-    
-
-# MAIN CALL
-
-if __name__ == "__main__":
-    #ref_dir = sys.argv[1]
-    arxiv_id = input("Arxiv paper id / Download link / File path: ")
-    config_file = None # default location for the config file
-    if os.path.isfile(arxiv_id):
-        bulk_download = BulkDownloader(config_file)
-        bulk_download.download_from_file(arxiv_id)
-        bulk_download.citerius.repo.close()
-    else:
-        paper_download = PaperDownloader(config_file, arxiv_id)
-        paper_download.download_paper_with_user_input()
-        paper_download.citerius.repo.close()
-    #bulk_download = BulkDownloader(ref_dir)
-    #bulk_download.download_from_citerius()
