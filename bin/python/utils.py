@@ -134,7 +134,9 @@ class CiteriusUtils():
         if re.match(pattern, string) == None:
             arxiv_id = "nan"
             download_link = string
+            print(f"Identified download link as {download_link}")
         else:
             download_link = "nan"
             arxiv_id = string
+            print(f"Identified arxiv id as {arxiv_id}")
         return arxiv_id, download_link

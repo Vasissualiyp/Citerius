@@ -87,7 +87,8 @@ class PaperDownloader():
             exit(1)
         
         # Extract bibliography data from citation string
-        bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[self.arxiv_id]
+        entry_name = self.cutils.obtain_label_from_bibentry(self.citation_str)
+        bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[entry_name]
         
         self.full_title = bibdata.fields['title']
         self.year = bibdata.fields['year']
