@@ -35,6 +35,17 @@
             requests
           ]; 
         };
+        ads = pkgs.python311Packages.buildPythonPackage rec {
+          pname = "ads";
+          version = "0.12.7";
+    	  src = pkgs.fetchFromGitHub {
+  		    owner = "andycasey";
+  		    repo = "ads";
+  		    rev = "6aa0e854a1f3dc1dcd242a36426ad5855b2cbcfe";
+  		    hash = "sha256-lGfCyDCxRfLmzzAXpAJtxczWK1/UdEC7096JRBiKEcs=";
+  		  };
+          propagatedBuildInputs = with pkgs.python311Packages; [ six requests werkzeug mock ];
+        };
         python = pkgs.python312Packages.python;
         pythonEnv = python.withPackages (ps: with ps; [
           pandas
@@ -46,6 +57,7 @@
           gitpython
           pybtex
           pybibget_pkg
+		  ads
         ]);
       in
       {
