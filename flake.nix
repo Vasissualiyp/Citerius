@@ -46,7 +46,13 @@
   		    rev = "6aa0e854a1f3dc1dcd242a36426ad5855b2cbcfe";
   		    hash = "sha256-lGfCyDCxRfLmzzAXpAJtxczWK1/UdEC7096JRBiKEcs=";
   		  };
-          propagatedBuildInputs = with python; [ six requests werkzeug mock ];
+          propagatedBuildInputs = with python; [ 
+		    six 
+			requests 
+			werkzeug 
+			mock 
+			httpretty
+		  ];
         };
         pythonEnv = python.python.withPackages (ps: with ps; [
           pandas
