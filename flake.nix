@@ -15,9 +15,9 @@
             allowUnfree = true;
           };
         };
-		pythonver = pkgs.python312Packages; # Set python version
+		python = pkgs.python312Packages; # Set python version
 
-        pybibget_pkg = pythonver.buildPythonPackage rec {
+        pybibget_pkg = python.buildPythonPackage rec {
           pname = "pybibget";
           version = "0.1.0";
 
@@ -25,7 +25,7 @@
             inherit pname version;
             hash = "sha256-M6CIctTOVn7kIPmsoHQmYl2wQaUzfel7ryw/3ebQitg=";
           };
-          propagatedBuildInputs = with pythonver; [ 
+          propagatedBuildInputs = with python; [ 
             lxml
             httpx
             appdirs
@@ -37,7 +37,7 @@
             requests
           ]; 
         };
-        ads = pythonver.buildPythonPackage rec {
+        ads = python.buildPythonPackage rec {
           pname = "ads";
           version = "0.12.7";
     	  src = pkgs.fetchFromGitHub {
@@ -46,10 +46,9 @@
   		    rev = "6aa0e854a1f3dc1dcd242a36426ad5855b2cbcfe";
   		    hash = "sha256-lGfCyDCxRfLmzzAXpAJtxczWK1/UdEC7096JRBiKEcs=";
   		  };
-          propagatedBuildInputs = with pythonver; [ six requests werkzeug mock ];
+          propagatedBuildInputs = with python; [ six requests werkzeug mock ];
         };
-        python = pythonver.python;
-        pythonEnv = python.withPackages (ps: with ps; [
+        pythonEnv = python.python.withPackages (ps: with ps; [
           pandas
           numpy
           pyfzf
