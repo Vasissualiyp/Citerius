@@ -39,13 +39,15 @@ class CiteriusParser():
         target.add_argument('--pdf', type=str, help='Path to pdf file of the paper to perform action with', default=False)
         target.add_argument('--file', type=str, help='Path to file of the collection of papers to perform action with', default=False)
         target.add_argument('--fzf', help='Fuzzy find paper label. If no action specified, then returns the label', action='store_true')
+        target.add_argument('--all', help='All papers in the dataframe', default=False, action='store_true')
         self.args = parser.parse_args()
 
     def avoid_multiple_definitions(self):
         """Throw errors if several targets/actions are declared"""
         args = self.args
 
-        targets = [ args.auto, args.label, args.arxiv, args.link, args.pdf, args.file ]
+        targets = [ args.auto, args.label, args.arxiv, args.link, 
+                   args.pdf, args.file, args.all ]
         targets_err = "Several targets detected. Please, use only one target call"
         self.find_double_definitions_in_list(targets, targets_err)
 
@@ -87,6 +89,8 @@ class CiteriusParser():
         elif self.args.file:
             arxiv_id = self.args.file
             bulk_download_flag = True
+        elif self.args.all:
+            pass # Work with dataframe download below
         else:
             arxiv_id = input("Arxiv paper id / Download link / File path: ")
             if os.path.isfile(arxiv_id):
@@ -95,6 +99,10 @@ class CiteriusParser():
         if bulk_download_flag:
             bulk_download = BulkDownloader(self.args.config)
             bulk_download.download_from_file(arxiv_id)
+            bulk_download.citerius.repo.close()
+        elif self.args.all:
+            bulk_download = BulkDownloader(self.args.config)
+            bulk_download.download_from_citerius()
             bulk_download.citerius.repo.close()
         else:
             paper_download = PaperDownloader(self.args.config, arxiv_id)
@@ -119,6 +127,8 @@ class CiteriusParser():
             raise NotImplementedError
         elif self.args.file:
             raise NotImplementedError
+        elif self.args.all:
+            raise NotImplementedError
         else:
             raise ValueError(f"Target for removal not specified")
 
@@ -131,6 +141,7 @@ class CiteriusParser():
         # Delete the paper
         if answer.lower() == 'y':
             citerius.remove_paper(label)
+            print(f"The paper with id '{id_string}' was successfully removed.")
             citerius.repo.close()
         else:
             print(f"You answered '{answer}'. The paper will not be removed.")
