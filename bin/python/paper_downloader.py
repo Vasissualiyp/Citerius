@@ -130,7 +130,8 @@ class PaperDownloader():
         as well as this paper's string to csv file
         """
     
-        csv_str = f"\"{self.full_title}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\",\"{self.download_link}\"\n"
+        full_title_nocomma = self.full_title.replace(",","")
+        csv_str = f"\"{full_title_nocomma}\",\"{self.full_authors}\",\"{self.arxiv_id}\",\"{self.year}\",\"{self.label}\",\"{self.download_ans}\",\"{self.download_src_ans}\",\"{self.download_link}\"\n"
     
         csv_file = open(self.citerius.csv_file, "a")
         csv_file.write(csv_str)
