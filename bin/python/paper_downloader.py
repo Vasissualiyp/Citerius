@@ -19,7 +19,8 @@ class PaperDownloader():
         Class to set up and download the paper from its arxiv id.
         Args:
             config_file (str): path to json config file 
-                (if None, then the default value is $HOME/user/.config/citerius/config.json)
+                (if None, then the default value is 
+                 $HOME/user/.config/citerius/config.json)
             download_id (str): 
                 id of paper on arxv to download, OR
                 download link, OR
@@ -82,9 +83,8 @@ class PaperDownloader():
     
         concat_string = " and " 
 
-        if self.citation_str == None:
-            print("There was an error when obtaining citation string")
-            exit(1)
+        if not self.citation_str:
+            raise BrokenPipeError("There was an error when obtaining citation string")
         
         # Extract bibliography data from citation string
         entry_name = self.cutils.obtain_label_from_bibentry(self.citation_str)
