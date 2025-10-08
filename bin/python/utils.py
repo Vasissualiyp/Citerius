@@ -58,7 +58,8 @@ class CiteriusUtils():
             stripped_line = line.strip()
             if stripped_line.startswith('@'):
                 # Match the pattern: @<entry_type>{<label>
-                match = re.match(r'@([a-z]+)\s*{\s*([^,]+)', stripped_line)
+                match = re.match(r'@([A-Za-z]+)\s*{\s*([^,]+)', stripped_line)
+                print(match)
                 if match:
                     label = match.group(2)
                     return label
@@ -131,7 +132,11 @@ class CiteriusUtils():
             be set in PaperDownloader class (i.e. one of them should be 'nan')
         """
         pattern = r'^(\d{4}\.\d{4,5}(v\d+)?|\d{7}(v\d+)?)$'
-        if re.match(pattern, string) == None:
+        if os.path.isfile(string):
+            arxiv_id = "nan"
+            download_link = "nan"
+            print(f"Identified file as {string}")
+        elif re.match(pattern, string) == None:
             arxiv_id = "nan"
             download_link = string
             print(f"Identified download link as {download_link}")

@@ -14,7 +14,8 @@ class PaperDownloader():
     def __init__(self, config_file, 
                  download_id: str, 
                  first_time_download = True, 
-                 no_commits = False):
+                 no_commits = False,
+                 debug = False):
         """
         Class to set up and download the paper from its arxiv id.
         Args:
@@ -24,25 +25,30 @@ class PaperDownloader():
             download_id (str): 
                 id of paper on arxv to download, OR
                 download link, OR
+                path to pdf of paper, OR
                 label for paper to be downloaded via Citerius dataframe
             first_time_download (bool): whether we're downloading a paper that 
                 was in the database before
             no_commits (bool): set to true if don't want to commit changes 
                 (in case downloading in bulk, for instance)
+            debug (bool): debugging flag
         """
 
         self.citerius = CiteriusConfig(config_file)
         self.cutils = CiteriusUtils()
         self.first_time_download = first_time_download
         self.no_commits = no_commits
+        self.debug = debug
 
+        self.pdf_path = ""
         if self.first_time_download:
             self.arxiv_id, self.download_link = self.cutils.check_if_string_is_arxiv_id(download_id)
-            if self.download_link == 'nan': # Arxiv paper
+            if self.download_link == 'nan' and self.arxiv_id != 'nan' : # Arxiv paper
                 self.citation_str = self.cutils.get_citation_from_arxiv_id(self.arxiv_id)
-            else: # Paper with link to download
+            else: # Paper with link to download or pdf of the file
                 editor = "vim"
                 self.get_citation_from_tmpfile(editor)
+                self.pdf_path = download_id
             self.get_arxiv_paper_info()
 
         else:
@@ -88,6 +94,12 @@ class PaperDownloader():
         
         # Extract bibliography data from citation string
         entry_name = self.cutils.obtain_label_from_bibentry(self.citation_str)
+        if self.debug:
+            print(f"=========================")
+            print(f"Citation string:")
+            print(self.citation_str)
+            print(f"=========================")
+            print(f"Initial label: {entry_name}")
         bibdata = pbt.database.parse_string(self.citation_str, "bibtex").entries[entry_name]
         
         self.full_title = bibdata.fields['title']
@@ -170,14 +182,19 @@ class PaperDownloader():
         print(f"The paper title is: {self.full_title}\n")
         print(f"The paper author(s) are: {self.full_authors}\n")
 
-        download_ans = self.input_with_default("Would you life to download this paper? (Y/n): ", "y")
+        if self.pdf_path:
+            download_ans = 'n'
+        else:
+            download_ans = self.input_with_default("Would you life to download this paper? (Y/n): ", "y")
         
-        if self.download_link == "nan":
+        if self.download_link == "nan" and self.arxiv_id != 'nan':
             download_src_ans = self.input_with_default("Would you life to download the source for this paper? (y/N): ", "n")
         else:
             download_src_ans = 'n'
         
-        if (download_ans.lower() == 'n' and download_src_ans.lower() == 'n'):
+        if (download_ans.lower() == 'n' and 
+            download_src_ans.lower() == 'n' and 
+            not self.pdf_path):
             print("No download will happen. Exiting...")
             label = "nan"
             exit(0)
@@ -313,17 +330,21 @@ class PaperDownloader():
         """
         General function to identify the method for paper download and download the paper itself
         """
-        if str(self.download_link).lower() == 'nan':
+        if str(self.download_link).lower() == 'nan' and str(self.arxiv_id).lower() != 'nan':
             self.download_arxiv_paper()
-        elif str(self.arxiv_id).lower() == 'nan':
+        elif str(self.download_link).lower() != 'nan' and str(self.arxiv_id).lower() == 'nan':
             self.download_paper_from_link()
         elif (self.download_ans == 'n' and self.download_src_ans == 'n'):
-            print(f"The paper {self.label} is a part of git repository, thus doesn't require download")
-            return
+            if not self.first_time_download:
+                print(f"The paper {self.label} is a part of git repository, thus doesn't require download")
+                return
+            self.add_paper_from_pdf(self.pdf_path)
         else:
-            print("Unknown situation with arxiv_id and download_link both not being nan.")
+            print("Unknown situation, exiting...")
             print(f"arxiv_id: {self.arxiv_id}")
             print(f"download_link: {self.download_link}")
+            print(f"download_ans: {self.download_ans}")
+            print(f"download_src_ans: {self.download_src_ans}")
             exit(1)
 
         if self.first_time_download and not self.no_commits:
@@ -352,6 +373,12 @@ class PaperDownloader():
             file.close()
             os.remove(self.download_src_path)
             print("Done!")
+
+    def add_paper_from_pdf(self, pdf_path):
+        self.download_ans = 'n'
+        self.download_src_ans = 'n'
+        os.rename(pdf_path, self.download_path)
+        self.citerius.repo.index.add([self.download_path])
 
     def download_paper_from_link(self):
         """

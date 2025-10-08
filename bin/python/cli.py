@@ -85,7 +85,7 @@ class CiteriusParser():
         elif self.args.link:
             arxiv_id = self.args.link
         elif self.args.pdf:
-            raise NotImplementedError
+            arxiv_id = self.args.pdf
         elif self.args.file:
             arxiv_id = self.args.file
             bulk_download_flag = True
@@ -106,7 +106,8 @@ class CiteriusParser():
             bulk_download.citerius.repo.close()
         else:
             paper_download = PaperDownloader(self.args.config, arxiv_id)
-            if self.args.no_confirm: paper_download.download_paper_without_user_input()
+            if self.args.no_confirm: 
+                paper_download.download_paper_without_user_input()
             else: paper_download.download_paper_with_user_input()
             paper_download.citerius.repo.close()
 

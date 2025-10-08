@@ -97,7 +97,7 @@
           pybtex
           pybibget_pkg
 		  ads
-		  doi2pdf
+		  #doi2pdf
         ]);
       in
       {

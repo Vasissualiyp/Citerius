@@ -117,7 +117,6 @@ class CiteriusConfig():
         """
         index = self.repo.index
         index.add([self.csv_file, self.bibtex_file])
-        index.add([self.csv_file, self.bibtex_file])
         index.commit(commit_message, author=self.author, committer=self.author)
 
 if __name__ == "__main__":
