@@ -22,24 +22,39 @@ class CiteriusParser():
 
     def parse_args(self):
         """Parse all the CLI arguments"""
-        parser = argparse.ArgumentParser(description="Perform certain Citerius ACTION on a specified TARGET")
+        parser = argparse.ArgumentParser(description="Perform certain " + \
+                "Citerius ACTION on a specified TARGET")
         
-        parser.add_argument('--no-confirm', help='Avoid prompting user for confirmation', action='store_true')
-        parser.add_argument('--config', help='Path to Citerius config file. Defaults to $HOME/.config/citerius/config.json', type=str, default=None)
+        parser.add_argument('--no-confirm', help='Avoid prompting user for " + \
+                "confirmation', action='store_true')
+        parser.add_argument('--config', help='Path to Citerius config file. "+\
+                "Defaults to $HOME/.config/citerius/config.json', 
+                type=str, default=None)
         
         action = parser.add_argument_group('action')
-        action.add_argument('--remove', help='Remove target. Only works with fzf or label targets', action='store_true')
-        action.add_argument('--download', help='Download/add target', action='store_true')
+        action.add_argument('--remove', help='Remove target. Only works with "+\
+                "fzf or label targets', action='store_true')
+        action.add_argument('--download', help='Download/add target',
+                action='store_true')
         
         target = parser.add_argument_group('target')
-        target.add_argument('--auto', type=str, help='The program automatically picks the type of targets below (except fzf)', default=False)
-        target.add_argument('--label', type=str, help='Label to perform action with', default=False)
-        target.add_argument('--arxiv', type=str, help='Arxiv number of the paper to perform action with', default=False)
-        target.add_argument('--link', type=str, help='Link to the paper to perform action with', default=False)
-        target.add_argument('--pdf', type=str, help='Path to pdf file of the paper to perform action with', default=False)
-        target.add_argument('--file', type=str, help='Path to file of the collection of papers to perform action with', default=False)
-        target.add_argument('--fzf', help='Fuzzy find paper label. If no action specified, then returns the label', action='store_true')
-        target.add_argument('--all', help='All papers in the dataframe', default=False, action='store_true')
+        target.add_argument('--auto', type=str, help='The program " + \
+                "automatically picks the type of targets below (except fzf)', 
+                default=False)
+        target.add_argument('--label', type=str, help='Label to perform " + \
+                "action with', default=False)
+        target.add_argument('--arxiv', type=str, help='Arxiv number of the " + \
+                "paper to perform action with', default=False)
+        target.add_argument('--link', type=str, help='Link to the paper to " + \
+                "perform action with', default=False)
+        target.add_argument('--pdf', type=str, help='Path to pdf file of the "+\
+                "paper to perform action with', default=False)
+        target.add_argument('--file', type=str, help='Path to file of the " + \
+                "collection of papers to perform action with', default=False)
+        target.add_argument('--fzf', help='Fuzzy find paper label. If no " + \
+                "action specified, then returns the label', action='store_true')
+        target.add_argument('--all', help='All papers in the dataframe', 
+                default=False, action='store_true')
         self.args = parser.parse_args()
 
     def avoid_multiple_definitions(self):
@@ -59,7 +74,8 @@ class CiteriusParser():
             raise ValueError(f"Cannot call fzf with target specified")
 
     def find_double_definitions_in_list(self, ls: list, error_string:str):
-        """A function to raise error if there are several non-empty values in the list
+        """A function to raise error if there are several non-empty values in 
+        the list
 
         Args:
             ls: list of values
@@ -75,7 +91,6 @@ class CiteriusParser():
 
     def download(self):
         bulk_download_flag = False
-
         if self.args.label:
             raise NotImplementedError
         elif self.args.auto:
@@ -90,10 +105,13 @@ class CiteriusParser():
             arxiv_id = self.args.file
             bulk_download_flag = True
         elif self.args.all:
+            arxiv_id = ""
             pass # Work with dataframe download below
         else:
-            arxiv_id = input("Arxiv paper id / Download link / File path: ")
-            if os.path.isfile(arxiv_id):
+            arxiv_id = input("Arxiv paper id / Download link / File path "+ \
+                             "(list of papers or pdf): ")
+            _, file_extension = os.path.splitext(arxiv_id)
+            if os.path.isfile(arxiv_id) and file_extension != "pdf":
                 bulk_download_flag = True
 
         if bulk_download_flag:
@@ -137,7 +155,8 @@ class CiteriusParser():
         if self.args.no_confirm:
             answer = 'y'
         else:
-            answer = input(f"You are about to remove paper with {id_string}. Are you sure? (y/N): ")
+            answer = input(f"You are about to remove paper with {id_string}. "+\
+                            "Are you sure? (y/N): ")
 
         # Delete the paper
         if answer.lower() == 'y':
